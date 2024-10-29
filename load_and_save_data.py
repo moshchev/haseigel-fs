@@ -18,7 +18,7 @@ connection_string = f'postgresql://{user}:{password}@{host}:{port}/{database}'
 engine = create_engine(connection_string)
 
 # SQL query to fetch data
-query = "SELECT * FROM html_data LIMIT 1000"
+query = "SELECT * FROM html_data LIMIT 2"
 
 # Execute query and load data into DataFrame
 df = pd.read_sql(query, engine)
