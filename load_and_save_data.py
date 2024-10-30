@@ -18,17 +18,24 @@ connection_string = f'postgresql://{user}:{password}@{host}:{port}/{database}'
 engine = create_engine(connection_string)
 
 # SQL query to fetch data
-query = "SELECT * FROM html_data LIMIT 2"
+def load_and_save_html_data(engine, limit=2):
+    # SQL query to fetch data
+    query = f"SELECT * FROM html_data LIMIT {limit}"
 
-# Execute query and load data into DataFrame
-df = pd.read_sql(query, engine)
+    # Execute query and load data into DataFrame
+    df = pd.read_sql(query, engine)
 
-# Define the relative path to the data folder
-data_path = 'haseigel-fs/data'
+    # Define the relative path to the data folder
+    data_path = 'data'
 
-# Ensure the 'data' directory exists
-os.makedirs(data_path, exist_ok=True)
+    # Ensure the 'data' directory exists
+    os.makedirs(data_path, exist_ok=True)
 
-# Save the DataFrame to a parquet file in the specified data folder
-df.to_parquet(os.path.join(data_path, 'HTML_data.parquet'))
-print(f"Data saved to '{data_path}/HTML_data.parquet'")
+    # Save the DataFrame to a parquet file in the specified data folder
+    df.to_parquet(os.path.join(data_path, 'HTML_data.parquet'))
+    print(f"Data saved to '{data_path}/HTML_data.parquet'")
+    
+    return df
+
+if __name__ == "__main__": # Only run when file executed directly, not when imported
+    load_and_save_html_data(engine, limit=2)
