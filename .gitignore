@@ -3,5 +3,8 @@
 data/
 .env
 
+#cache
+__pycache__/
+
 # mac files
 .DS_Store
