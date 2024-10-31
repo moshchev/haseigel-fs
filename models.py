@@ -1,5 +1,5 @@
 from transformers import MobileViTImageProcessor, MobileViTV2ForImageClassification
-
+from PIL import Image
 def load_model_and_processor_apple_model():
     """
     Loads and returns the MobileViTV2 model and feature extractor https://huggingface.co/apple/mobilevitv2-1.0-imagenet1k-256
@@ -11,7 +11,7 @@ def load_model_and_processor_apple_model():
     model = MobileViTV2ForImageClassification.from_pretrained("shehan97/mobilevitv2-1.0-imagenet1k-256")
     return feature_extractor, model
 
-def predict_image_class_apple_model(image, feature_extractor, model):
+def predict_image_class_apple_model(path_to_image, feature_extractor, model):
     """
     Predicts the ImageNet class for a given PIL Image
     
@@ -23,6 +23,7 @@ def predict_image_class_apple_model(image, feature_extractor, model):
     Returns:
         str: Predicted class label
     """
+    image = Image.open(path_to_image).convert("RGB")
     inputs = feature_extractor(images=image, return_tensors="pt")
     outputs = model(**inputs)
     logits = outputs.logits
