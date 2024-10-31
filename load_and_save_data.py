@@ -18,7 +18,7 @@ connection_string = f'postgresql://{user}:{password}@{host}:{port}/{database}'
 engine = create_engine(connection_string)
 
 # SQL query to fetch data
-def load_and_save_html_data(engine, limit=25):
+def load_and_save_html_data(engine, limit=250000):
     # SQL query to fetch data
     query = f"SELECT * FROM html_data LIMIT {limit}"
 
@@ -38,4 +38,4 @@ def load_and_save_html_data(engine, limit=25):
     return df
 
 if __name__ == "__main__": # Only run when file executed directly, not when imported
-    load_and_save_html_data(engine, limit=2)
+    load_and_save_html_data(engine, limit=250000)
