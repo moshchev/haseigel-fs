@@ -18,7 +18,7 @@ connection_string = f'postgresql://{user}:{password}@{host}:{port}/{database}'
 engine = create_engine(connection_string)
 
 # SQL query to fetch data
-def load_and_save_html_data(engine, limit=2):
+def load_and_save_html_data(engine, limit=25):
     # SQL query to fetch data
     query = f"SELECT * FROM html_data LIMIT {limit}"
 
