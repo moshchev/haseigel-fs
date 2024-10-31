@@ -38,4 +38,4 @@ def load_and_save_html_data(engine, limit=250000):
     return df
 
 if __name__ == "__main__": # Only run when file executed directly, not when imported
-    load_and_save_html_data(engine, limit=250000)
+    load_and_save_html_data(engine)
