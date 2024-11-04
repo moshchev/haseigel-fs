@@ -10,7 +10,7 @@ def process_domains_endpoint():
         
         # Call the processing function
         result = process_domains(
-            domains_data=data.get('domains_data'),  # None will fetch from DB
+            domains_data=data,
             output_type=output_type
         )
         return jsonify(result), 200
