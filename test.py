@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-from app.utils.get_htmls_as_df import get_html_data_as_json, create_db_engine
+from app.utils.data_tool import get_html_data_as_json, create_db_engine
 import requests
 
 if __name__ == "__main__":
