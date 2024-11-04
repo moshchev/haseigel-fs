@@ -1,9 +1,7 @@
-from models import load_model_and_processor_apple_model, predict_image_class_apple_model
-from extract_images import download_images_with_local_path, extract_img_attributes, save_combined_html
-from get_htmls_as_df import get_html_data_as_json, create_db_engine
-from dotenv import load_dotenv
-
+from .image_models import load_model_and_processor_apple_model, predict_image_class_apple_model
+from .extract_images import download_images_with_local_path, extract_img_attributes
 from collections import defaultdict
+from ..config import TEMP_IMAGE_DIR
 
 def process_single_domain(domain_data, model, processor):
     domain_results = {
@@ -19,7 +17,7 @@ def process_single_domain(domain_data, model, processor):
         # break
         for img in img_data:
             # First download the image and add local path
-            download_images_with_local_path([img], '../data/images')
+            download_images_with_local_path([img], TEMP_IMAGE_DIR)
             
             # Then check if download was successful and local path was added
             if "local_path" in img:
@@ -77,12 +75,3 @@ def process_domains(domains_data, output_type="detailed"):
             "status": "success",
             "output": dict(summary_stats)  # Convert defaultdict to regular dict
         }
-
-
-
-
-if __name__ == "__main__":
-    assert load_dotenv()
-    engine = create_db_engine()
-    input_data = get_html_data_as_json(engine)
-    print(process_domains(input_data))

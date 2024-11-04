@@ -79,9 +79,9 @@ def get_html_data_as_json(engine, limit=10):
     
     return result
 
-if __name__ == "__main__": # Only run when file executed directly, not when imported
-    # Load environment variables
-    assert load_dotenv(), "Failed to load .env file"
-    engine = create_db_engine()
-    # load_and_save_html_data(engine)
-    print(get_html_data_as_json(engine)['data'][0].keys())
+# if __name__ == "__main__": # Only run when file executed directly, not when imported
+#     # Load environment variables
+#     assert load_dotenv(), "Failed to load .env file"
+#     engine = create_db_engine()
+#     # load_and_save_html_data(engine)
+#     print(get_html_data_as_json(engine)['data'][0].keys())
