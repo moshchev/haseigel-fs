@@ -29,12 +29,7 @@ for batch processing:
   ]
 }
 
-single domain processing:
-{
-  "domain_start_id": 123,
-  "response_text": "<html>...</html>"
-}
-
+--------------------------------
 
 the output should be like this -> 
 
