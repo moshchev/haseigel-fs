@@ -21,14 +21,40 @@ def extract_img_attributes(html):
 
     return img_data
 
-def save_combined_html(df, output_file="haseigel-fs/data/combined.html"):
+def save_combined_html(df, output_file="../data/combined.html"):
     # Combine all response text into one HTML file
     with open(output_file, "w", encoding="utf-8") as file:
         for html_content in df["response_text"]:
             file.write(html_content)
             file.write("\n")  # Separate each HTML content by a newline for readability
 
-def download_images_with_local_path(dict_list, download_folder="haseigel-fs/data/images"):
+def download_images_with_local_path(dict_list, download_folder="../data/images"):
+    # what's inside of the dict_list?
+    # try to include structure of the input in the docstring if it's not obvious
+
+    """
+    Downloads images from URLs in a list of dictionaries and adds local file paths.
+    
+    Args:
+        dict_list (list): List of dictionaries containing image attributes.
+            Each dictionary has keys like 'src', 'alt', 'title', etc.
+            Example:
+            [
+                {
+                    'title': 'some title',
+                    'alt': 'some alt text',
+                    'border': '0', 
+                    'src': 'https://example.com/images/logo.png' - URL to the image
+                },
+                ...
+            ]
+        download_folder (str): Path where images will be downloaded to.
+            Defaults to "../data/images"
+            
+    Returns:
+        None: Modifies the input dictionaries in-place by adding 'local_path' key
+    """
+
     # Ensure the download folder exists
     os.makedirs(download_folder, exist_ok=True)
     
@@ -45,15 +71,18 @@ def download_images_with_local_path(dict_list, download_folder="haseigel-fs/data
             # Download the image
             try:
                 urlretrieve(img_url, img_path)
-                print(f"Downloaded: {img_name}")
+                # print(f"Downloaded: {img_name}")
                 
                 # Add the relative path to the dictionary
-                img_data["local_path"] = os.path.relpath(img_path, start=download_folder)
+                # img_data["local_path"] = os.path.relpath(img_path, start=download_folder)
+                img_data["local_path"] = f"{download_folder}/{img_name}"
                 
             except Exception as e:
-                print(f"Failed to download {img_url}: {e}")
+                # print(f"Failed to download {img_url}: {e}")
+                pass
         else:
-            print(f"Skipping item {index} - No valid image URL found.")
+            # print(f"Skipping item {index} - No valid image URL found.")
+            pass
 
 if __name__ == "__main__":
     # Load the parquet file
