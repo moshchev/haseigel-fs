@@ -1,5 +1,6 @@
 Whats still missing:
-- fix functions (download images)
+- fix functions (download images) -> done
+- add new endpoint for processing html -> done
 - add logging to the app
 - add checks for the different stages of the workflow (images found, images downloaded, images classified)
 - add few more models and compare them
