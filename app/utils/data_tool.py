@@ -78,3 +78,29 @@ def get_html_data_as_json(engine, limit=10):
     }
     
     return result
+
+def get_random_html(engine):
+    """
+    Fetches a single random HTML data from the database and returns it as a dictionary.
+
+    Args:
+        engine: SQLAlchemy engine instance
+
+    Returns:
+        dict: Data structured as:
+        {
+            "html": actual_html_content
+        }
+    """
+    # SQL query to fetch a single random row
+    query = "SELECT response_text FROM html_data ORDER BY RANDOM() LIMIT 1"
+    
+    # Execute query and load data into DataFrame
+    df = pd.read_sql(query, engine)
+    
+    # Extract the HTML content
+    if not df.empty:
+        html_content = df.iloc[0]['response_text']
+        return {"html": html_content}
+    else:
+        return {"html": None}
