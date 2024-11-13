@@ -1,8 +1,8 @@
 from flask import request, jsonify
 from app import app  # Import the Flask app instance
-from app.services.processing_functions import process_domains
+from app.services.processing_functions import process_domains, process_html
 from app.services.single_image_classification import classify_image
-
+from app.services.image_models import MobileViTClassifier
 
 @app.route('/process-domains', methods=['POST'])
 def process_domains_endpoint():
@@ -43,3 +43,20 @@ def model_classification(model_name):
         return jsonify({'error': str(ve)}), 400
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
+@app.route('/process-html', methods=['POST'])
+def process_html_endpoint():
+    try:
+        data = request.json
+        html = data.get('html')
+        if not html:
+            return jsonify({'error': 'No HTML content provided'}), 400
+        
+        model = MobileViTClassifier()
+        
+        # Call the processing function
+        result = process_html(html, model)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400

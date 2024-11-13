@@ -3,37 +3,51 @@ from .extract_images import download_images_with_local_path, extract_img_attribu
 from collections import defaultdict
 from ..config import TEMP_IMAGE_DIR
 
+def process_html(html, model):
+    html_results = {
+        "predictions": [],
+        "statistics": defaultdict(int)
+    }
+    
+    img_data = extract_img_attributes(html)
+    for img in img_data:
+        # First download the image and add local path
+        download_images_with_local_path([img], TEMP_IMAGE_DIR)
+        
+        # Then check if download was successful and local path was added
+        if "local_path" in img:
+            # Skip SVG files since they can't be processed by the model
+            if img["local_path"].lower().endswith('.svg'):
+                continue
+            prediction = model.predict(img["local_path"])['prediction']
+            
+            # Store individual prediction
+            html_results["predictions"].append({
+                "image_path": img["local_path"],
+                "predicted_class": prediction
+            })
+            
+            # Update statistics counter
+            html_results["statistics"][prediction] += 1
+    
+    return html_results
+
+
 def process_single_domain(domain_data, model):
     domain_results = {
         "domain_start_id": domain_data["domain_start_id"],
         "predictions": [],
-        "statistics": defaultdict(int)  # Will be populated based on actual predictions
+        "statistics": defaultdict(int)
     }
     
-    # Process images
+    # Process each HTML
     for html in domain_data["response_text"]:
-        img_data = extract_img_attributes(html)
-        # print(img_data)
-        # break
-        for img in img_data:
-            # First download the image and add local path
-            download_images_with_local_path([img], TEMP_IMAGE_DIR)
-            
-            # Then check if download was successful and local path was added
-            if "local_path" in img:
-                # Skip SVG files since they can't be processed by the model
-                if img["local_path"].lower().endswith('.svg'): ### TODO this is a wrong place to check it, we shouldnt download SVGs in the first place
-                    continue
-                prediction = model.predict(img["local_path"])['prediction']
-                
-                # Store individual prediction
-                domain_results["predictions"].append({
-                    "image_path": img["local_path"],
-                    "predicted_class": prediction
-                })
-                
-                # Update statistics counter
-                domain_results["statistics"][prediction] += 1
+        html_results = process_html(html, model)
+        
+        # Append predictions and update statistics
+        domain_results["predictions"].extend(html_results["predictions"])
+        for category, count in html_results["statistics"].items():
+            domain_results["statistics"][category] += count
     
     return domain_results
 
