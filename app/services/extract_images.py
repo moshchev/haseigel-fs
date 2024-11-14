@@ -84,23 +84,23 @@ def download_images_with_local_path(dict_list, download_folder="../data/images")
             # print(f"Skipping item {index} - No valid image URL found.")
             pass
 
-if __name__ == "__main__":
-    # Load the parquet file
-    df = pd.read_parquet('haseigel-fs/data/HTML_data.parquet')
+# if __name__ == "__main__":
+#     # Load the parquet file
+#     df = pd.read_parquet('haseigel-fs/data/HTML_data.parquet')
 
-    # Save all HTML content into one combined HTML file
-    save_combined_html(df)
+#     # Save all HTML content into one combined HTML file
+#     save_combined_html(df)
 
-    # Read combined HTML for parsing
-    with open("haseigel-fs/data/combined.html", "r", encoding="utf-8") as file:
-        combined_html = file.read()
+#     # Read combined HTML for parsing
+#     with open("haseigel-fs/data/combined.html", "r", encoding="utf-8") as file:
+#         combined_html = file.read()
 
-    # Extract image attributes into a dictionary list
-    img_data = extract_img_attributes(combined_html)
+#     # Extract image attributes into a dictionary list
+#     img_data = extract_img_attributes(combined_html)
 
-    # Download images and add local paths to the dictionary list
-    download_images_with_local_path(img_data)
+#     # Download images and add local paths to the dictionary list
+#     download_images_with_local_path(img_data)
 
-    # Optionally, convert img_data to a DataFrame and save
-    img_df = pd.DataFrame(img_data)
-    img_df.to_csv("data/image_attributes_with_local_path.csv", index=False)  # Save to CSV for further analysis
+#     # Optionally, convert img_data to a DataFrame and save
+#     img_df = pd.DataFrame(img_data)
+#     img_df.to_csv("data/image_attributes_with_local_path.csv", index=False)  # Save to CSV for further analysis
