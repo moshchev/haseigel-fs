@@ -4,12 +4,25 @@ from collections import defaultdict
 from ..config import TEMP_IMAGE_DIR
 
 def process_html(html, model):
+    """nahui ne nuzhna -> replace with the download and classify
+
+    Args:
+        html (str): html code
+        model (MobileViTClassifier): keep this model as it is
+    Returns:
+       (dict) 
+        html_results = {
+            "predictions": [],
+            "statistics": defaultdict(int)
+            }
+    """
     html_results = {
         "predictions": [],
         "statistics": defaultdict(int)
     }
     
-    img_data = extract_img_attributes(html)
+    img_data = extract_img_attributes(html) # TODO -> replace the download_images_with_local_path -> adjust the workflow
+    # instead of putting single images in the function as an input dump whole list there.
     for img in img_data:
         # First download the image and add local path
         download_images_with_local_path([img], TEMP_IMAGE_DIR)
@@ -19,6 +32,8 @@ def process_html(html, model):
             # Skip SVG files since they can't be processed by the model
             if img["local_path"].lower().endswith('.svg'):
                 continue
+
+            ### from here you need to put this in the donwload & classify function
             prediction = model.predict(img["local_path"])['prediction']
             
             # Store individual prediction
