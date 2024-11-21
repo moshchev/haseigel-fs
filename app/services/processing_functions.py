@@ -3,6 +3,7 @@ from .extract_images import download_images_with_local_path, extract_img_attribu
 from collections import defaultdict
 from ..config import TEMP_IMAGE_DIR
 
+
 def process_html(html, model):
     """nahui ne nuzhna -> replace with the download and classify
 
