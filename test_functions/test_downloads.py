@@ -4,6 +4,21 @@ from collections import defaultdict
 from urllib.parse import urlparse
 from app.config import TEMP_IMAGE_DIR
 
+import logging
+# Configure logging to write to a file called test.log
+log_file_path = "test.log"
+
+# Set up basic logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file_path),
+        logging.StreamHandler()
+    ]
+)
+
+
 def process_html(html, base_url, model):
     """nahui ne nuzhna -> replace with the download and classify
 
@@ -48,6 +63,7 @@ def process_html(html, base_url, model):
     
     return html_results
 
+
 def extract_img_attributes(html, base_url):
     """
     Parses the HTML to extract attributes of all <img> tags and processes the 'src' attribute.
@@ -79,7 +95,7 @@ def extract_img_attributes(html, base_url):
         # Convert relative URLs to absolute URLs
         if img_url and urlparse(img_url).scheme == "":
             img_url = urljoin(base_url, img_url)
-            print(f"Converted relative URL to absolute: {img_url}")
+            logging.info(f"Converted relative URL to absolute: {img_url}")
 
         # Replace backslashes with forward slashes
         if img_url:
@@ -90,6 +106,7 @@ def extract_img_attributes(html, base_url):
         img_data.append(img_attributes)  # Append dictionary to the list
 
     return img_data
+
 
 def save_combined_html(df, output_file="../data/combined.html"):
     # Combine all response text into one HTML file
@@ -145,20 +162,20 @@ def download_images_with_local_path(dict_list, download_folder="../data/images")
                 with open(img_path, "wb") as img_file:
                     for chunk in response.iter_content(1024):
                         img_file.write(chunk)
-                print(f"Downloaded: {img_name}")
+                logging.info(f"Downloaded: {img_name}")
                 
                 # Add the relative path to the dictionary
                 img_data["local_path"] = os.path.relpath(img_path, start=download_folder)
                 
             except Exception as e:
                 # Print the error and skip to the next item
-                print(f"Error downloading {img_url}: {e}")
+                logging.error(f"Error downloading {img_url}: {e}")
         else:
             # Skip data URIs or invalid URLs
             if img_url and img_url.startswith("data:image"):
-                print(f"Skipping item {index} - Data URI found.")
+                logging.warning(f"Skipping item {index} - Data URI found.")
             else:
-                print(f"Skipping item {index} - No valid image URL found.")
+                logging.warning(f"Skipping item {index} - No valid image URL found.")
 
 
 if __name__ == "__main__":
