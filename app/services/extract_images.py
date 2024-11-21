@@ -4,6 +4,7 @@ import os
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
+
 def extract_img_attributes(html):
     # Parse the HTML content
     soup = BeautifulSoup(html, 'lxml')
@@ -21,12 +22,14 @@ def extract_img_attributes(html):
 
     return img_data
 
+
 def save_combined_html(df, output_file="../data/combined.html"):
     # Combine all response text into one HTML file
     with open(output_file, "w", encoding="utf-8") as file:
         for html_content in df["response_text"]:
             file.write(html_content)
             file.write("\n")  # Separate each HTML content by a newline for readability
+
 
 def download_images_with_local_path(dict_list, download_folder="../data/images"):
     # what's inside of the dict_list?
