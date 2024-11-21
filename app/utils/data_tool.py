@@ -58,19 +58,20 @@ def get_html_data_as_json(engine, limit=10):
         }
     """
     # SQL query to fetch data
-    query = f"SELECT domain_start_id, response_text FROM html_data LIMIT {limit}"
+    query = f"SELECT domain_start_id, response_url, response_text FROM html_data LIMIT {limit}"
     
     # Execute query and load data into DataFrame
     df = pd.read_sql(query, engine)
     
     # Group by domain_start_id and aggregate response_text into lists
-    grouped = df.groupby('domain_start_id')['response_text'].agg(list).reset_index()
+    grouped = df.groupby('domain_start_id')[['response_url', 'response_text']].agg(list).reset_index()
     
     # Convert to desired format
     result = {
         "data": [
             {
                 "domain_start_id": row['domain_start_id'],
+                "base_url": row['response_url'],
                 "response_text": row['response_text']
             }
             for _, row in grouped.iterrows()
