@@ -25,3 +25,16 @@ def encode_image_to_base64(image_path):
     except Exception as e:
         logging.error(f"Error encoding image {image_path} to base64: {e}")
         return None
+    
+
+def prepare_image(image_path):
+    """
+    Prepares an image by preprocessing and encoding it to base64.
+    
+    Returns:
+        str: Base64 encoded image
+    """
+    img = preprocess_image(image_path)
+    base64_image = encode_image_to_base64(img)
+    
+    return base64_image
