@@ -9,7 +9,7 @@ def preprocess_image(image_path, target_size=(512, 512)):
     try:
         img = Image.open(image_path)
         img = img.resize(target_size, Image.LANCZOS).convert("L")
-        return img
+        return img #TODO this should return a path -> save to temp folder???
     except Exception as e:
         logging.error(f"Error preprocessing image {image_path}: {e}")
         return None
