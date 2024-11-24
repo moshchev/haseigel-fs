@@ -42,6 +42,7 @@ class MobileViTClassifier:
             "model": "mobilevit_v2"
         }
     
+    
 class OpenAIImageClassifier():
     def __init__(self, model_name:str="gpt-4o-mini"):
         load_dotenv()
@@ -67,10 +68,8 @@ class OpenAIImageClassifier():
         return message
 
     def predict(self, image_path:str, categories:list[str]) -> dict:
-        prompt = ImagePrompt.DEFAULT_PROMPT
         schema = create_dynamic_schema(categories)
-        message = self._prepare_message(image_path, prompt)
-        # beta.chat.completions.parse
+        message = self._prepare_message(image_path, ImagePrompt.DEFAULT_PROMPT)
         response = self.client.beta.chat.completions.parse(
             model=self.model_name,
             messages=message,

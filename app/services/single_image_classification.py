@@ -1,9 +1,10 @@
 from PIL import Image
-from .image_models import MobileViTClassifier
+from .image_models import MobileViTClassifier, OpenAIImageClassifier
 
 # Dictionary mapping model names to their respective model classes
 MODEL_REGISTRY = {
-    'mobilevit_v2': MobileViTClassifier()
+    'mobilevit_v2': MobileViTClassifier(),
+    'openai': OpenAIImageClassifier()
 }
 
 def classify_image(image_file, model_name: str):
