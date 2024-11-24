@@ -3,7 +3,7 @@ from PIL import Image
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
-from ..utils import prepare_image, create_dynamic_schema, ImagePrompt
+from ..utils import prepare_image, create_dynamic_schema, ImagePrompt, NoCategoriesSchema
 
 class MobileViTClassifier:
     def __init__(self):
@@ -66,10 +66,16 @@ class OpenAIImageClassifier():
             }
         ]
         return message
+    
+    def predict(self, image_path:str, categories:list[str]=None) -> dict:
+        if categories:
+            schema = create_dynamic_schema(categories)
+            prompt = ImagePrompt.DEFAULT_PROMPT
+        else:
+            schema = NoCategoriesSchema
+            prompt = ImagePrompt.NO_CATEGORIES_PROMPT
 
-    def predict(self, image_path:str, categories:list[str]) -> dict:
-        schema = create_dynamic_schema(categories)
-        message = self._prepare_message(image_path, ImagePrompt.DEFAULT_PROMPT)
+        message = self._prepare_message(image_path, prompt)
         response = self.client.beta.chat.completions.parse(
             model=self.model_name,
             messages=message,
@@ -78,7 +84,7 @@ class OpenAIImageClassifier():
         try:
             response_content = response.choices[0].message.parsed
             response_data = response_content.model_dump()
-            schema.parse_obj(response_data)  # Validate the response against the schema
+            schema.model_validate(response_data)  # Validate the response against the schema
         except Exception as e:
             raise ValueError(f"Response validation failed: {e}")
         
