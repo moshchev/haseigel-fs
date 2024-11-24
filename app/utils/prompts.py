@@ -1,5 +1,6 @@
-from pydantic import Field, create_model
+from pydantic import Field, create_model, BaseModel
 from typing import Optional
+
 
 def create_dynamic_schema(categories: list[str]):
     """
@@ -11,6 +12,11 @@ def create_dynamic_schema(categories: list[str]):
     }
     fields['custom_category'] = (Optional[str], str)
     return create_model("DynamicImageSchema", **fields)
+
+
+class NoCategoriesSchema(BaseModel):
+    prediction: str
+
 
 class ImagePrompt():
     DEFAULT_PROMPT = """
