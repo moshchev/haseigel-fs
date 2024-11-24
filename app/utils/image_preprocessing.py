@@ -34,7 +34,7 @@ def prepare_image(image_path):
     Returns:
         str: Base64 encoded image
     """
-    img = preprocess_image(image_path)
-    base64_image = encode_image_to_base64(img)
+    # img = preprocess_image(image_path)
+    base64_image = encode_image_to_base64(image_path)
     
     return base64_image
