@@ -26,7 +26,7 @@ class ImagePrompt():
     - For each category, respond with `true` if the object is clearly visible, and `false` otherwise.
     - If none of the categories match the content of the image, assign your own single-word category to describe the image.
     """
-    NO_SCHEMA_PROMPT = """
+    NO_CATEGORIES_PROMPT = """
     You are an advanced AI system specializing in image recognition.
     Your task is to analyze the provided image and determine the most appropriate category for the image.
     **Instructions:**
