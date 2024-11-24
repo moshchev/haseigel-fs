@@ -77,7 +77,8 @@ class OpenAIImageClassifier():
             response_format=schema
         )
         try:
-            response_data = response.model_dump()
+            response_content = response.choices[0].message.parsed
+            response_data = response_content.model_dump()
             schema.parse_obj(response_data)  # Validate the response against the schema
         except Exception as e:
             raise ValueError(f"Response validation failed: {e}")
