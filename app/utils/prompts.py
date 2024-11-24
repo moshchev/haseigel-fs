@@ -31,9 +31,4 @@ class ImagePrompt():
     Your task is to analyze the provided image and determine the most appropriate category for the image.
     **Instructions:**
     - Analyze the image and provide a single category that best describes the content of the image.
-    - Return the result in a JSON format with the key 'prediction' and the value as the category.
-    
-    EXAMPLE_JSON = {
-        "prediction": predicted category,
-    }
     """
