@@ -2,12 +2,6 @@
 TARGET_IMAGE_SIZE = (512, 512)
 SUPPORTED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png']
 
-# Model Constants
-MODEL_REGISTRY = {
-    'mobilevit_v2': 'MobileViTClassifier',
-    'openai': 'OpenAIImageClassifier'
-}
-
 # OpenAI Constants
 DEFAULT_MODEL_NAME = "gpt-4o-mini"
 

@@ -5,3 +5,36 @@ Whats still missing:
 - add checks for the different stages of the workflow (images found, images downloaded, images classified)
 - add few more models and compare them
 - benchmark performance of the app (ressource usage, speed)
+
+
+app/
+├── __init__.py
+├── config/
+│   ├── __init__.py
+│   ├── settings.py        # Renamed from config.py
+│   └── constants.py       # For any constant values
+├── api/
+│   ├── __init__.py
+│   ├── routes.py         # Renamed from api_routes.py
+│   └── validators.py     # For request validation
+├── core/
+│   ├── __init__.py
+│   ├── models/
+│   │   ├── __init__.py
+│   │   └── image_models.py
+│   └── schemas/
+│       ├── __init__.py
+│       └── image_schemas.py  # Move from prompts.py
+├── services/
+│   ├── __init__.py
+│   ├── image/
+│   │   ├── __init__.py
+│   │   ├── classifier.py     # Renamed from single_image_classification.py
+│   │   ├── extractor.py     # Renamed from extract_images.py
+│   │   └── processor.py     # Renamed from processing_functions.py
+│   └── database/
+│       ├── __init__.py
+│       └── data_tool.py
+└── utils/
+    ├── __init__.py
+    └── image_preprocessing.py
