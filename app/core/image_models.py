@@ -3,7 +3,9 @@ from PIL import Image
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
-from ..utils import prepare_image, create_dynamic_schema, ImagePrompt, NoCategoriesSchema
+from ..utils import prepare_image
+from app.config import DEFAULT_MODEL_NAME
+from .response_validation import create_dynamic_schema, ImagePrompts, NoCategoriesSchema
 
 class MobileViTClassifier:
     def __init__(self):
@@ -22,7 +24,7 @@ class MobileViTClassifier:
         Predicts the ImageNet class for a given PIL Image
         
         Args:
-            image (PIL.Image): Input image to classify
+            image (PIL.Image): Input image to classify ### TODO -> change to image_path -> this should be unified over all models. VLMS wont take a PIL image.
             
         Returns:
             dict: Prediction results including class label
@@ -44,7 +46,7 @@ class MobileViTClassifier:
     
     
 class OpenAIImageClassifier():
-    def __init__(self, model_name:str="gpt-4o-mini"):
+    def __init__(self, model_name:str=DEFAULT_MODEL_NAME):
         load_dotenv()
         self._validate_environment()
         self.client = OpenAI()
@@ -70,10 +72,10 @@ class OpenAIImageClassifier():
     def predict(self, image_path:str, categories:list[str]=None) -> dict:
         if categories:
             schema = create_dynamic_schema(categories)
-            prompt = ImagePrompt.DEFAULT_PROMPT
+            prompt = ImagePrompts.DEFAULT_PROMPT
         else:
             schema = NoCategoriesSchema
-            prompt = ImagePrompt.NO_CATEGORIES_PROMPT
+            prompt = ImagePrompts.NO_CATEGORIES_PROMPT
 
         message = self._prepare_message(image_path, prompt)
         response = self.client.beta.chat.completions.parse(
