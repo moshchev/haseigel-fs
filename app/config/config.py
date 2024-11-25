@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from . import DEFAULT_MODEL_NAME, MODEL_REGISTRY
 
 # Get base directory of project
 BASE_DIR = Path(__file__).resolve().parent.parent
