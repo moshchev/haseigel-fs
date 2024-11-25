@@ -13,12 +13,10 @@ def test_domains():
     assert load_dotenv()
     engine = create_db_engine()
     input_data = get_html_data_as_json(engine)
-    # input_data = get_random_html(engine)
     print('got the data')
 
     # Send POST request to localhost with input data
     response = requests.post('http://127.0.0.1:5000/process-domains', json=input_data)
-    # response = requests.post('http://127.0.0.1:5000/process-html', json=input_data)
     # Check if request was successful
     if response.status_code == 200:
         print('Successfully sent data to server')
@@ -32,5 +30,18 @@ def test_image():
     response = requests.post('http://127.0.0.1:5000/model/mobilevit_v2', files={'image': open(image_path, 'rb')})
     print(response.json())
 
+def test_html():
+    assert load_dotenv()
+    engine = create_db_engine()
+    input_data = get_random_html(engine)
+    response = requests.post('http://127.0.0.1:5000/process-html', json=input_data)
+    print(response.json())
+
 if __name__ == "__main__":
-    test_image()
+    # test_image()
+    # test_html()
+    test_domains()
+    # assert load_dotenv()
+    # engine = create_db_engine()
+    # input_data = get_html_data_as_json(engine)
+    # print(input_data)

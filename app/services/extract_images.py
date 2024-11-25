@@ -78,7 +78,7 @@ def download_images_with_local_path(dict_list, download_folder="../data/images")
                 img_data["local_path"] = f"{download_folder}/{img_name}"
                 
             except Exception as e:
-                # print(f"Failed to download {img_url}: {e}")
+                print(f"Failed to download {img_url}: {e}")
                 pass
         else:
             # print(f"Skipping item {index} - No valid image URL found.")
