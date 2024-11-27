@@ -36,7 +36,7 @@ def load_and_save_html_data(engine, limit=250000):
     return df
 
 
-def get_html_data_as_json(engine, limit=10):
+def get_html_data_as_json(engine, limit=15):
     """
     Fetches HTML data from database and restructures it into a JSON-like format
     where response_text is grouped by domain_start_id.
