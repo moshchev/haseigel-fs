@@ -4,15 +4,16 @@ from app.utils.data_tool import get_html_data_as_json, create_db_engine, get_ran
 import requests
 from collections import defaultdict
 from app.config import TEMP_IMAGE_DIR
-from app.services.image_models import MobileViTClassifier
+from app.core.image_models import MobileViTClassifier
 import logging
 import os
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 import pandas as pd
 import ssl
-logname = "application_image_extraction.log"  
 
+
+logname = "application_image_extraction.log"  
 
 logging.basicConfig(filename=logname,
                     filemode='a',
@@ -165,7 +166,7 @@ def download_images_with_local_path(dict_list, download_folder="../data/images")
                 logging.info(f"Downloaded: {img_name}")
                 
                 # Add the relative path to the dictionary
-                img_data["local_path"] = os.path.relpath(img_path, start=download_folder)
+                img_data["local_path"] = os.path.relpath(img_path, start=download_folder) #TODO -> returns the name of the local file instead of the path to the file 
                 
             except Exception as e:
                 # Print the error and skip to the next item
@@ -184,7 +185,7 @@ if __name__ == "__main__":
     input_data = get_random_html(engine)
     logging.info('got the data')
     # Extract HTML content and base URL from input_data
-    html = input_data.get("html_content", "")
+    html = input_data.get("response_text", "")
     base_url = input_data.get("base_url", "")
 
     # Validate input data

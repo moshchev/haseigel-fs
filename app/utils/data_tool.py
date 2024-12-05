@@ -94,7 +94,8 @@ def get_random_html(engine):
         }
     """
     # SQL query to fetch a single random row
-    query = "SELECT response_text FROM html_data ORDER BY RANDOM() LIMIT 1"
+    # query = "SELECT response_text FROM html_data ORDER BY RANDOM() LIMIT 1"
+    query = 'SELECT * FROM html_data LIMIT 1' # debug
     
     # Execute query and load data into DataFrame
     df = pd.read_sql(query, engine)
@@ -102,6 +103,10 @@ def get_random_html(engine):
     # Extract the HTML content
     if not df.empty:
         html_content = df.iloc[0]['response_text']
-        return {"html": html_content}
+        base_url = df.iloc[0]['response_url']
+        return {
+            "response_text": html_content,
+            "base_url": base_url
+        }
     else:
-        return {"html": None}
+        return {"html": None, "base_url": None}

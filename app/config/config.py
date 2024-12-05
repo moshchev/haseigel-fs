@@ -11,4 +11,3 @@ TEMP_IMAGE_DIR = os.path.join(IMAGE_DIR, 'temp')
 # Ensure directories exist
 os.makedirs(TEMP_IMAGE_DIR, exist_ok=True)
 
-print(TEMP_IMAGE_DIR)
