@@ -4,8 +4,9 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 from ..utils import prepare_image
-from app.config import DEFAULT_MODEL_NAME
+from app.config import MODELS
 from .response_validation import create_dynamic_schema, ImagePrompts, NoCategoriesSchema
+import litellm
 
 class MobileViTClassifier:
     def __init__(self):
@@ -46,7 +47,7 @@ class MobileViTClassifier:
     
     
 class OpenAIImageClassifier():
-    def __init__(self, model_name:str=DEFAULT_MODEL_NAME):
+    def __init__(self, model_name:str=MODELS['OPENAI']):
         load_dotenv()
         self._validate_environment()
         self.client = OpenAI()
@@ -91,3 +92,12 @@ class OpenAIImageClassifier():
             raise ValueError(f"Response validation failed: {e}")
         
         return response_data
+    
+class VisionLanguageModelClassifier():
+    def __init__(self, model_name:str=MODELS['FIREWORKS_LLAMA']):
+        self.model_name = model_name
+        self.system_prompt = ImagePrompts.DEFAULT_PROMPT
+        self._validate_environment()
+        
+    def predict(self, image_path:str, categories:list[str]=None) -> dict:
+        pass
