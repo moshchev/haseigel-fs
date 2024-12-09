@@ -1,7 +1,7 @@
 from .constants import (
     TARGET_IMAGE_SIZE,
     SUPPORTED_IMAGE_FORMATS,
-    DEFAULT_MODEL_NAME,
+    MODELS,
     ERROR_MESSAGES,
     DEFAULT_OUTPUT_TYPE,
     DEFAULT_DB_LIMIT,
@@ -14,7 +14,7 @@ from .config import (
 __all__ = [
     'TARGET_IMAGE_SIZE',
     'SUPPORTED_IMAGE_FORMATS',
-    'DEFAULT_MODEL_NAME',
+    'MODELS',
     'ERROR_MESSAGES',
     'DEFAULT_OUTPUT_TYPE',
     'DEFAULT_DB_LIMIT',

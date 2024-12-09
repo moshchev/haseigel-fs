@@ -2,8 +2,11 @@
 TARGET_IMAGE_SIZE = (512, 512)
 SUPPORTED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png']
 
-# OpenAI Constants
-DEFAULT_MODEL_NAME = "gpt-4o-mini"
+# Models 
+MODELS = {
+    'OPENAI': 'gpt-4o-mini',
+    'FIREWORKS_LLAMA': 'fireworks_ai/accounts/fireworks/models/llama-v3p2-11b-vision-instruct'
+}
 
 # API Response Messages
 ERROR_MESSAGES = {
