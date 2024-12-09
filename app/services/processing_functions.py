@@ -1,7 +1,8 @@
-from .image_models import MobileViTClassifier
+from ..core.image_models import MobileViTClassifier
 from .extract_images import download_images_with_local_path, extract_img_attributes
 from collections import defaultdict
-from ..config import TEMP_IMAGE_DIR
+from app.config import TEMP_IMAGE_DIR
+
 
 
 def process_html(html, model):

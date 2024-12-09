@@ -1,7 +1,5 @@
 from flask import Flask
-# from flask_cors import CORS
+from app.api.routes import api
 
 app = Flask(__name__)
-
-# Import routes to register them with the app
-from app import api_routes
+app.register_blueprint(api)

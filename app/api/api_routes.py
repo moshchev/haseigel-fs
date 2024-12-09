@@ -2,7 +2,7 @@ from flask import request, jsonify
 from app import app  # Import the Flask app instance
 from app.services.processing_functions import process_domains, process_html
 from app.services.single_image_classification import classify_image
-from app.services.image_models import MobileViTClassifier
+from app.core.image_models import MobileViTClassifier
 
 @app.route('/process-domains', methods=['POST'])
 def process_domains_endpoint():
