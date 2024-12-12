@@ -12,3 +12,6 @@ __pycache__/
 
 # logs 
 *.log
+
+# intermediate results
+*.json
