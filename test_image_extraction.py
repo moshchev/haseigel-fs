@@ -22,47 +22,45 @@ logging.basicConfig(filename=logname,
                     level=logging.DEBUG)
 
 
+
 def process_html(html, base_url, model):
-    """nahui ne nuzhna -> replace with the download and classify
+    """
+    Processes HTML to extract image attributes, download images, and classify them.
 
     Args:
-        html (str): html code
-        model (MobileViTClassifier): keep this model as it is
+        html (str): HTML content.
+        base_url (str): Base URL for resolving relative image paths.
+        model (MobileViTClassifier): Classification model.
+
     Returns:
-       (dict) 
-        html_results = {
-            "predictions": [],
-            "statistics": defaultdict(int)
-            }
+        dict: Contains predictions and statistics.
     """
     html_results = {
         "predictions": [],
         "statistics": defaultdict(int)
     }
-    
-    img_data = extract_img_attributes(html, base_url) # TODO -> replace the download_images_with_local_path -> adjust the workflow
-    # instead of putting single images in the function as an input dump whole list there.
+
+    # Extract image attributes
+    img_data = extract_img_attributes(html, base_url)
+
+    # Download images and update local paths
+    download_images_with_local_path(img_data, TEMP_IMAGE_DIR)
+
+    # Classify downloaded images
     for img in img_data:
-        # First download the image and add local path
-        download_images_with_local_path([img], TEMP_IMAGE_DIR)
-        
-        # Then check if download was successful and local path was added
-        if "local_path" in img:
-            # Skip non jpg files and logo images since they can't be processed by the model, check jpeg!!!
-            if not img["local_path"].lower().endswith(".jpg") or "logo" in img["local_path"].lower():
+        if "local_path" in img and img["local_path"]:
+            if not any(img["local_path"].lower().endswith(ext) for ext in [".jpeg", ".jpg", ".png"]) and "logo" not in img["local_path"].lower():
                 continue
 
-            ### from here you need to put this in the donwload & classify function
-            prediction = model.predict(img["local_path"])['prediction']
-            
-            # Store individual prediction
-            html_results["predictions"].append({
-                "image_path": img["local_path"],
-                "predicted_class": prediction
-            })
-            
-            # Update statistics counter
-            html_results["statistics"][prediction] += 1
+            try:
+                prediction = model.predict(img["local_path"])['prediction']
+                html_results["predictions"].append({
+                    "image_path": img["local_path"],
+                    "predicted_class": prediction
+                })
+                html_results["statistics"][prediction] += 1
+            except Exception as e:
+                logging.error(f"Error classifying image {img['local_path']}: {e}")
     
     return html_results
 
@@ -117,66 +115,43 @@ def save_combined_html(df, output_file="../data/combined.html"):
             file.write(html_content)
             file.write("\n")  # Separate each HTML content by a newline for readability
 
-def download_images_with_local_path(dict_list, download_folder="../data/images"):
+def download_images_with_local_path(dict_list, download_folder=TEMP_IMAGE_DIR):
     """
     Downloads images from URLs in a list of dictionaries and adds local file paths.
     
     Args:
         dict_list (list): List of dictionaries containing image attributes.
-            Each dictionary has keys like 'src', 'alt', 'title', etc.
-            Example:
-            [
-                {
-                    'title': 'some title',
-                    'alt': 'some alt text',
-                    'border': '0', 
-                    'src': 'https://example.com/images/logo.png' - URL to the image
-                },
-                ...
-            ]
         download_folder (str): Path where images will be downloaded to.
-            Defaults to "../data/images"
-            
-    Returns:
-        None: Modifies the input dictionaries in-place by adding 'local_path' key
+            Defaults to the TEMP_IMAGE_DIR from config.
     """
-
     # Ensure the download folder exists
     os.makedirs(download_folder, exist_ok=True)
     default_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'}
     
-    # Loop through each dictionary in the list
     for index, img_data in enumerate(dict_list):
         img_url = img_data.get("src")
         
         # Check if URL is valid and not a data URI
         if img_url and urlparse(img_url).scheme in ["http", "https"]:
-            # Generate filename consistent with the original function
+            # Generate a filename for the image
             img_name = f"{index}_{os.path.basename(urlparse(img_url).path)}"
-            img_path = os.path.join(download_folder, img_name)
+            img_path = os.path.join(download_folder, img_name)  # Full path to the image
             
-            # Download the image using requests with SSL verification disabled
             try:
-                # Attempt to download with custom User-Agent on the first try
+                # Download the image
                 response = requests.get(img_url, headers=default_headers, stream=True, verify=False)
-                response.raise_for_status()  # Raise an error for HTTP issues
+                response.raise_for_status()
                 with open(img_path, "wb") as img_file:
                     for chunk in response.iter_content(1024):
                         img_file.write(chunk)
-                logging.info(f"Downloaded: {img_name}")
+                logging.info(f"Downloaded image: {img_path}")
                 
-                # Add the relative path to the dictionary
-                img_data["local_path"] = os.path.relpath(img_path, start=download_folder) #TODO -> returns the name of the local file instead of the path to the file 
-                
+                # Set the absolute path in the dictionary
+                img_data["local_path"] = img_path
             except Exception as e:
-                # Print the error and skip to the next item
-                logging.warning(f"Error downloading {img_url}: {e}")
+                logging.warning(f"Failed to download image {img_url}: {e}")
         else:
-            # Skip data URIs or invalid URLs
-            if img_url and img_url.startswith("data:image"):
-                logging.warning(f"Skipping item {index} - Data URI found.")
-            else:
-                logging.warning(f"Skipping item {index} - No valid image URL found.")
+            logging.warning(f"Skipping invalid URL: {img_url}")
 
 if __name__ == "__main__":
     assert load_dotenv()
