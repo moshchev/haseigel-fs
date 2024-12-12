@@ -3,7 +3,7 @@ from ..core.image_models import MobileViTClassifier, OpenAIImageClassifier
 
 MODEL_REGISTRY = {
     'mobilevit_v2': MobileViTClassifier(),
-    'openai': OpenAIImageClassifier()
+    # 'openai': OpenAIImageClassifier()
 }
 
 def classify_image(image_file, model_name: str):
