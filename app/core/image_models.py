@@ -7,6 +7,7 @@ from ..utils import prepare_image
 from app.config import MODELS
 from .response_validation import create_dynamic_schema, ImagePrompts, NoCategoriesSchema
 import litellm
+import json
 
 class MobileViTClassifier:
     def __init__(self):
@@ -97,7 +98,25 @@ class VisionLanguageModelClassifier():
     def __init__(self, model_name:str=MODELS['FIREWORKS_LLAMA']):
         self.model_name = model_name
         self.system_prompt = ImagePrompts.DEFAULT_PROMPT
-        self._validate_environment()
+    
+    @staticmethod
+    def clean_llm_output(text):
+        # Remove markdown indicators
+        text = text.replace('```json', '').replace('```', '')
+        
+        # Remove newlines and extra spaces
+        text = text.replace('\n', '').replace('  ', '')
+        
+        return json.loads(text)
         
     def predict(self, image_path:str, categories:list[str]=None) -> dict:
-        pass
+        base64_img = prepare_image(image_path)
+
+        response = litellm.completion(
+            model=self.model_name, 
+            messages=[
+                {"role": "user", "content": ImagePrompts.get_categorized_prompt(categories)},
+                {"role": "user", "content": f"data:image/jpeg;base64,{base64_img}"}
+            ],
+        )
+        return self.clean_llm_output(response.choices[0].message.content)

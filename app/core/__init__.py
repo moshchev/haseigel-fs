@@ -1,3 +1,3 @@
-from .image_models import MobileViTClassifier, OpenAIImageClassifier
+from .image_models import MobileViTClassifier, OpenAIImageClassifier, VisionLanguageModelClassifier
 
-__all__ = ["MobileViTClassifier", "OpenAIImageClassifier"]
+__all__ = ["MobileViTClassifier", "OpenAIImageClassifier", "VisionLanguageModelClassifier"]
