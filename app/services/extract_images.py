@@ -49,6 +49,7 @@ def extract_img_attributes(html, base_url):
 
     return img_data
 
+
 def save_combined_html(df, output_file="../data/combined.html"):
     # Combine all response text into one HTML file
     with open(output_file, "w", encoding="utf-8") as file:
