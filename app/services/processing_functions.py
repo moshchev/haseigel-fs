@@ -4,47 +4,44 @@ from collections import defaultdict
 from app.config import TEMP_IMAGE_DIR
 
 
-def process_html(html, model):
-    """nahui ne nuzhna -> replace with the download and classify
+def process_html(html, base_url, model):
+    """
+    Processes HTML to extract image attributes, download images, and classify them.
 
     Args:
-        html (str): html code
-        model (MobileViTClassifier): keep this model as it is
+        html (str): HTML content.
+        base_url (str): Base URL for resolving relative image paths.
+        model (MobileViTClassifier): Classification model.
+
     Returns:
-       (dict) 
-        html_results = {
-            "predictions": [],
-            "statistics": defaultdict(int)
-            }
+        dict: Contains predictions and statistics.
     """
     html_results = {
         "predictions": [],
         "statistics": defaultdict(int)
     }
-    
-    img_data = extract_img_attributes(html) # TODO -> replace the download_images_with_local_path -> adjust the workflow
-    # instead of putting single images in the function as an input dump whole list there.
+
+    # Extract image attributes
+    img_data = extract_img_attributes(html, base_url)
+
+    # Download images and update local paths
+    download_images_with_local_path(img_data, TEMP_IMAGE_DIR)
+
+    # Classify downloaded images
     for img in img_data:
-        # First download the image and add local path
-        download_images_with_local_path([img], TEMP_IMAGE_DIR)
-        
-        # Then check if download was successful and local path was added
-        if "local_path" in img:
-            # Skip SVG files since they can't be processed by the model
-            if img["local_path"].lower().endswith('.svg'):
+        if "local_path" in img and img["local_path"]:
+            if not any(img["local_path"].lower().endswith(ext) for ext in [".jpeg", ".jpg", ".png"]) and "logo" not in img["local_path"].lower():
                 continue
 
-            ### from here you need to put this in the donwload & classify function
-            prediction = model.predict(img["local_path"])['prediction']
-            
-            # Store individual prediction
-            html_results["predictions"].append({
-                "image_path": img["local_path"],
-                "predicted_class": prediction
-            })
-            
-            # Update statistics counter
-            html_results["statistics"][prediction] += 1
+            try:
+                prediction = model.predict(img["local_path"])['prediction']
+                html_results["predictions"].append({
+                    "image_path": img["local_path"],
+                    "predicted_class": prediction
+                })
+                html_results["statistics"][prediction] += 1
+            except Exception as e:
+                print(f"Error classifying image {img['local_path']}: {e}")
     
     return html_results
 

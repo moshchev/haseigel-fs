@@ -39,8 +39,8 @@ def test_html():
 
 if __name__ == "__main__":
     # test_image()
-    # test_html()
-    test_domains()
+    test_html()
+    # test_domains()
     # assert load_dotenv()
     # engine = create_db_engine()
     # input_data = get_html_data_as_json(engine)

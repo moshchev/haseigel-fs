@@ -49,15 +49,19 @@ def process_domains_endpoint():
 
 @api.route('/process-html', methods=['POST'])
 def process_html_endpoint():
+    """
+    {'html':'actual html'}
+    """
     try:
         data = request.json
-        html = data.get('html')
+        html = data.get('response_text')
+        base_url = data.get('response_url')
         if not html:
             return jsonify({'error': ERROR_MESSAGES['NO_HTML_CONTENT']}), 400
         
         model = MobileViTClassifier()
         
-        result = process_html(html, model)
+        result = process_html(html, base_url, model)
         return jsonify(result), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 400 
