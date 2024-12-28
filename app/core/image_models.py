@@ -4,10 +4,15 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 from ..utils import prepare_image
-from app.config import MODELS
 from .response_validation import create_dynamic_schema, ImagePrompts, NoCategoriesSchema
 import litellm
 import json
+
+# Models 
+MODELS = {
+    'OPENAI': 'gpt-4o-mini',
+    'FIREWORKS_LLAMA': 'fireworks_ai/accounts/fireworks/models/llama-v3p2-11b-vision-instruct'
+}
 
 class MobileViTClassifier:
     def __init__(self):
