@@ -1,20 +1,28 @@
-# from dotenv import load_dotenv
-import os
-import sys
-import moondream as md
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from PIL import Image
+import time
 
-# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# load_dotenv()
+start_time = time.time()
 
-# Initialize with API key
-model = md.vl(api_key=os.environ['MOONDREAM'])
+model_id = "vikhyatk/moondream2"
+revision = "2024-08-26"  # Pin to specific version
+model = AutoModelForCausalLM.from_pretrained(
+    model_id, trust_remote_code=True, revision=revision
+)
+tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
 
-# Load an image
-img = '/Users/alexander/Desktop/projects/haseigel-fs/data/images/temp/Wintergrillen 992x661.jpg.webp'
-image = Image.open(img)
-encoded_image = model.encode_image(image)  # Encode image (recommended for multiple operations)
+model_load_end = time.time()
+print(f"Model loaded in {model_load_end - start_time:.2f} seconds")
 
-# Detect objects
-detect_result = model.detect(image, 'grill')  # change 'subject' to what you want to detect
-print("Detected objects:", detect_result["objects"])
+# Image processing time
+image_process_start = time.time()
+
+image = Image.open('data/images/temp/Wintergrillen 992x661.jpg.webp')
+enc_image = model.encode_image(image)
+print(model.answer_question(enc_image, "is there a grill in this image? answer yes or no", tokenizer))
+
+image_process_end = time.time()
+print(f"Image processed in {image_process_end - image_process_start:.2f} seconds")
+
+end_time = time.time()
+print(f"Total time: {end_time - start_time:.2f} seconds")

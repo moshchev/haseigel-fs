@@ -9,6 +9,7 @@ from app.utils.image_preprocessing import encode_image_to_base64
 
 load_dotenv()
 # model="fireworks_ai/accounts/fireworks/models/llama-v3p2-90b-vision-instruct"
+# accounts/fireworks/models/qwen2-vl-7b-instruct
 model_qwen = 'fireworks_ai/accounts/fireworks/models/qwen2-vl-72b-instruct'
 # img = '/Users/alexander/Desktop/projects/haseigel-fs/app/data/images/temp/0_cuscinetti_a_sfere-315x242.jpg'
 img = '/Users/alexander/Desktop/projects/haseigel-fs/data/images/temp/Wintergrillen 992x661.jpg.webp'
