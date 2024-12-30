@@ -13,10 +13,11 @@
   - Native Moondream client shows better performance over HF:
     - Query time: ~0.5 seconds per query
     - Image processing: ~7 seconds per image
-  - I didnt test the HF over multiple queries
-  - I didnt test the asyinc processing of the queries (both native client and HF)
-  - I didnt test on a gpu from HF
-
+---
+- I didnt test the HF over multiple queries
+- I didnt test the asyinc processing of the queries (both native client and HF)
+- I didnt test on a gpu from HF
+---
 ### Alternative Approach
 
 - Consider using hosted LLM services (e.g., Fireworks)
