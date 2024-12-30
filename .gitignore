@@ -16,3 +16,7 @@ __pycache__/
 # intermediate results
 *.json
 *.parquet
+
+# models
+
+*.mf

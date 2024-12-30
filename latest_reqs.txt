@@ -39,7 +39,7 @@ huggingface-hub==0.27.0
 humanfriendly==10.0
 idna==3.10
 importlib_metadata==8.5.0
-instructor==1.7.0
+# instructor==1.7.0
 ipykernel==6.29.5
 ipython==8.27.0
 itsdangerous==2.2.0
@@ -76,7 +76,7 @@ propcache==0.2.1
 protobuf==5.29.1
 psutil==6.0.0
 psycopg==3.2.1
-psycopg2==2.9.9
+#psycopg2==2.9.9
 ptyprocess==0.7.0
 pure_eval==0.2.3
 pyarrow==18.0.0
