@@ -3,9 +3,8 @@ Whats still missing:
 - add new endpoint for processing html -> done
 - add logging to the app
 - add checks for the different stages of the workflow (images found, images downloaded, images classified)
-- add few more models and compare them
-- benchmark performance of the app (ressource usage, speed)
-- !!! dont initalize model if its not used !!!
+- add few more models and compare them -> done
+- benchmark performance of the app (ressource usage, speed) -> compared models
 
 
 app/
