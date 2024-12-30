@@ -3,15 +3,16 @@ from PIL import Image
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
-from ..utils import prepare_image
+from app.utils import prepare_image
 from .response_validation import create_dynamic_schema, ImagePrompts, NoCategoriesSchema
 import litellm
 import json
 
-# Models 
+# Models
 MODELS = {
     'OPENAI': 'gpt-4o-mini',
-    'FIREWORKS_LLAMA': 'fireworks_ai/accounts/fireworks/models/llama-v3p2-11b-vision-instruct'
+    'FIREWORKS_LLAMA': 'fireworks_ai/accounts/fireworks/models/llama-v3p2-11b-vision-instruct',
+    'FIREWORKS_QWEN': 'fireworks_ai/accounts/fireworks/models/qwen2-vl-72b-instruct',
 }
 
 class MobileViTClassifier:
@@ -100,7 +101,7 @@ class OpenAIImageClassifier():
         return response_data
     
 class VisionLanguageModelClassifier():
-    def __init__(self, model_name:str=MODELS['FIREWORKS_LLAMA']):
+    def __init__(self, model_name:str=MODELS['FIREWORKS_QWEN']):
         self.model_name = model_name
         self.system_prompt = ImagePrompts.DEFAULT_PROMPT
     
@@ -113,15 +114,41 @@ class VisionLanguageModelClassifier():
         text = text.replace('\n', '').replace('  ', '')
         
         return json.loads(text)
-        
+    
+    def _prepare_message(self, image_path:str, prompt:str) -> list[dict]:
+        base64_image = prepare_image(image_path)
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url":f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    }
+                ]
+            }
+        ]
+        return messages
+    
     def predict(self, image_path:str, categories:list[str]=None) -> dict:
-        base64_img = prepare_image(image_path)
+        if categories:
+            prompt = ImagePrompts.get_categorized_prompt(categories)
+        else:
+            pass
+            # Write new prompt
+
+        messages = self._prepare_message(image_path, prompt)
 
         response = litellm.completion(
             model=self.model_name, 
-            messages=[
-                {"role": "user", "content": ImagePrompts.get_categorized_prompt(categories)},
-                {"role": "user", "content": f"data:image/jpeg;base64,{base64_img}"}
-            ],
+            messages=messages,
         )
-        return self.clean_llm_output(response.choices[0].message.content)
+
+        # return self.clean_llm_output(response.choices[0].message.content)
+        return response.choices[0].message.content
