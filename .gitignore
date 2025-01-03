@@ -3,6 +3,7 @@
 app/data/
 .env
 .venv
+data/images/test_set/
 
 #cache
 __pycache__/
