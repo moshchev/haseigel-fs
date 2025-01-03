@@ -17,6 +17,9 @@ This document compares the performance of Moondream2B model using two different 
 ## Performance Results
 
 ### HuggingFace Implementation
+*CPU*
+
+**Single Query**
 
 | Operation | Time (seconds) |
 |-----------|---------------|
@@ -24,7 +27,19 @@ This document compares the performance of Moondream2B model using two different 
 | Image Processing | 14.80 |
 | **Total Time** | **17.86** |
 
+**Multiple Queries**
+
+| Operation | Time (seconds) |
+|-----------|---------------|
+| Model Loading | 5.44 |
+| Image Processing | 8.21 |
+| Query 1 | 7.77 |
+| Query 2 | 7.51 |
+| Query 3 | 7.00 |
+| **Total Time** | **35.93** |
+
 ### Native Moondream Implementation
+*Supports only CPU*
 
 | Operation | Time (seconds) |
 |-----------|---------------|
@@ -39,4 +54,4 @@ This document compares the performance of Moondream2B model using two different 
 
 - Native client is faster overall, with better image processing performance
 - Native client supports CPU only -> hf can be faster with GPU, didnt test it yet
-- *I didnt test the hf on the multiple queries, still needs to be tested*
+- HF doesnt takes shit ton of time to process individual queries, where native client takes 0.48-0.55 seconds per query (kinda ridiculous, I will double check if this is correct)

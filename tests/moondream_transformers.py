@@ -25,6 +25,9 @@ image_process_start = time.time()
 
 image = Image.open('data/images/temp/Wintergrillen 992x661.jpg.webp')
 enc_image = model.encode_image(image)
+image_process_end = time.time()
+print(f"Image processed in {image_process_end - image_process_start:.2f} seconds")
+
 query_start = time.time()
 answer = model.answer_question(enc_image, "is there a grill in this image? answer yes or no", tokenizer)
 query_end = time.time()
@@ -40,9 +43,6 @@ answer = model.answer_question(enc_image, "is there a chair in this image? answe
 query_end = time.time()
 print(f"Query 3 answered in {query_end - query_start:.2f} seconds")
 # print(answer)
-
-image_process_end = time.time()
-print(f"Image processed in {image_process_end - image_process_start:.2f} seconds")
 
 
 end_time = time.time()
