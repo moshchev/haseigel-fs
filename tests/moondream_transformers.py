@@ -30,28 +30,33 @@
 #     print(f"Image processed in {image_process_end - image_process_start:.2f} seconds")
 
 #     query_start = time.time()
-#     answer = model.answer_question(enc_image, "is there a grill in this image? answer yes or no", tokenizer)
+#     answer = model.answer_question(enc_image, "is there a hatchet in this image? answer yes or no", tokenizer)
 #     query_end = time.time()
 #     print(f"Query 1 answered in {query_end - query_start:.2f} seconds")
+#     print(answer)
 
 #     query_start = time.time()
-#     answer = model.answer_question(enc_image, "is there a axe in this image? answer yes or no", tokenizer)
+#     answer = model.answer_question(enc_image, "is there a grill in this image? answer yes or no", tokenizer)
 #     query_end = time.time()
 #     print(f"Query 2 answered in {query_end - query_start:.2f} seconds")
+#     print(answer)
 
 #     query_start = time.time()
-#     answer = model.answer_question(enc_image, "is there a chair in this image? answer yes or no", tokenizer)
+#     answer = model.answer_question(enc_image, "is there a person in this image? answer yes or no", tokenizer)
 #     query_end = time.time()
 #     print(f"Query 3 answered in {query_end - query_start:.2f} seconds")
-#     # print(answer)
+#     print(answer)
 
 
 #     end_time = time.time()
 #     print(f"Total time: {end_time - start_time:.2f} seconds")
 
+# moondream_transformers()
+
 import time
 import torch
 import asyncio
+import json
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 import os
@@ -96,14 +101,41 @@ class MoondreamProcessor:
 
         # Return a dictionary mapping filenames to encoded images
         return {filename: enc_img for filename, enc_img in zip(tasks.keys(), encoded_images)}
+    
+    def parse_query_result(self, queries, results):
+        """Parse query strings and model responses into a structured dictionary."""
+        parsed_results = {}
+        for query, result in zip(queries, results):
+            # Handle both "is there a" and "is there an"
+            if "is there a " in query:
+                category = query.split("is there a ")[1].split(" in this image")[0]
+            elif "is there an " in query:
+                category = query.split("is there an ")[1].split(" in this image")[0]
+            else:
+                category = "unknown"  # Fallback for unexpected query formats
 
+            # Normalize and clean the result
+            answer = result.strip().lower()  # Convert to lowercase
+            if "yes" in answer:
+                parsed_results[category] = "yes"
+            elif "no" in answer:
+                parsed_results[category] = "no"
+            else:
+                parsed_results[category] = "unknown"  # Handle unexpected responses
+        return parsed_results
     async def ask_questions(self, enc_image, queries):
         """Runs multiple queries on a single image asynchronously."""
         loop = asyncio.get_running_loop()
-        tasks = [loop.run_in_executor(None, self.model.answer_question, enc_image, q, self.tokenizer) for q in queries]
-        return await asyncio.gather(*tasks)
+        tasks = [
+            loop.run_in_executor(None, self.model.answer_question, enc_image, q, self.tokenizer)
+            for q in queries
+        ]
+        results = await asyncio.gather(*tasks)
+        
+        # Parse the queries and results into a structured format
+        return self.parse_query_result(queries, results)
 
-    async def process_batch(self, batch, queries):
+    async def process_batch(self, batch, queries, output_file="output.json"):
         """Processes a batch of images with encoding and queries asynchronously."""
         batch_start = time.time()
 
@@ -111,8 +143,11 @@ class MoondreamProcessor:
         encoded_images = await self.encode_images(batch)
 
         # Prepare async tasks for querying
-        tasks = {filename: self.ask_questions(enc_image, queries) for filename, enc_image in encoded_images.items()}
-        
+        tasks = {
+            filename: self.ask_questions(enc_image, queries)
+            for filename, enc_image in encoded_images.items()
+        }
+
         # Run all queries asynchronously
         results = await asyncio.gather(*tasks.values())
 
@@ -120,11 +155,13 @@ class MoondreamProcessor:
         print(f"Processed {len(batch)} images in {batch_end - batch_start:.2f} sec")
 
         # Map results back to filenames
-        return {filename: result for filename, result in zip(tasks.keys(), results)}
+        final_results = {filename: result for filename, result in zip(tasks.keys(), results)}
 
-    def run_batch(self, batch, queries):
-        """Wrapper to run batch inference synchronously."""
-        return asyncio.run(self.process_batch(batch, queries))
+        # Save results to a JSON file
+        with open(output_file, "w") as f:
+            json.dump(final_results, f, indent=4)
+
+        return final_results
 
 
 class ImageLoader:
@@ -168,26 +205,34 @@ class ImageLoader:
             filenames, images = zip(*batch)  # Separate filenames and images
             yield filenames, images
 
-# Example Usage
-image_loader = ImageLoader(folder_path="data/images/test_set", target_size=(512, 512), max_workers=8)
+# Define input directory and batch size
+image_folder = "data/images/test_set"
+batch_size = 4
+output_file = "results.json"
 
-# Process batches directly
-moondream = MoondreamProcessor()
-
-# Define the 3 queries per image
+# Define queries for the model
 queries = [
-    "is there a grill in this image? answer yes or no",
-    "is there an axe in this image? answer yes or no",
-    "is there a chair in this image? answer yes or no"
+    "is there a cat in this image? answer yes or no",
+    "is there a dog in this image? answer yes or no",
+    "is there a giraffe in this image? answer yes or no",
 ]
 
-# Process batches
-batch_size = 4
-for batch in image_loader.batch_images(batch_size):
-    results = moondream.run_batch(batch, queries)  # Run batch inference
+# Initialize the image loader
+image_loader = ImageLoader(folder_path=image_folder, target_size=(512, 512), max_workers=8)
 
-    # Print results
+# Initialize the MoondreamProcessor
+moondream_processor = MoondreamProcessor()
+
+# Process images in batches
+for batch in image_loader.batch_images(batch_size=batch_size):
+    print("Processing a new batch of images...")
+    results = asyncio.run(moondream_processor.process_batch(batch, queries, output_file))
+
+    # Print results for this batch
     for filename, answers in results.items():
         print(f"Results for {filename}: {answers}")
 
+    # Break after one batch for testing (remove this line for full processing)
     break
+
+print(f"Results saved to {output_file}")
