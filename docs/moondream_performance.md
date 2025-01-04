@@ -14,6 +14,8 @@ This document compares the performance of Moondream2B model using two different 
 - **Memory:** 16.0 GiB
 - **Network Bandwidth:** 12.5 Gbps
 
+---
+
 - **Instance Type:** g4dn.xlarge (GPU)
 - **GPU:** Nvidia T4
 - **VRAM:** 16.0 GiB
