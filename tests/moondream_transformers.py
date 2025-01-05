@@ -168,26 +168,27 @@ class ImageLoader:
             filenames, images = zip(*batch)  # Separate filenames and images
             yield filenames, images
 
-# Example Usage
-image_loader = ImageLoader(folder_path="data/images/test_set", target_size=(512, 512), max_workers=8)
+if __name__ == "__main__":
+    # Example Usage
+    image_loader = ImageLoader(folder_path="data/images/test_set", target_size=(512, 512), max_workers=8)
 
-# Process batches directly
-moondream = MoondreamProcessor()
+    # Process batches directly
+    moondream = MoondreamProcessor()
 
-# Define the 3 queries per image
-queries = [
-    "is there a grill in this image? answer yes or no",
-    "is there an axe in this image? answer yes or no",
-    "is there a chair in this image? answer yes or no"
-]
+    # Define the 3 queries per image
+    queries = [
+        "is there a grill in this image? answer yes or no",
+        "is there an axe in this image? answer yes or no",
+        "is there a chair in this image? answer yes or no"
+    ]
 
-# Process batches
-batch_size = 4
-for batch in image_loader.batch_images(batch_size):
-    results = moondream.run_batch(batch, queries)  # Run batch inference
+    # Process batches
+    batch_size = 2
+    for batch in image_loader.batch_images(batch_size):
+        results = moondream.run_batch(batch, queries)  # Run batch inference
 
-    # Print results
-    for filename, answers in results.items():
-        print(f"Results for {filename}: {answers}")
+        # Print results
+        for filename, answers in results.items():
+            print(f"Results for {filename}: {answers}")
 
-    break
+        break
