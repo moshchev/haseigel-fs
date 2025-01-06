@@ -70,57 +70,88 @@ def download_images_with_local_path(dict_list, download_folder=TEMP_IMAGE_DIR):
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
     }
     
+    # Define timeouts
+    TIMEOUT = (5, 15)  # (connect timeout, read timeout)
+    
     for img_data in dict_list:
         img_url = img_data.get("src")
         domain_id = img_data.get("domain_id")
         
-        if img_url and urlparse(img_url).scheme in ["http", "https"]:
-            parsed_url = urlparse(img_url)
-            original_name = os.path.basename(parsed_url.path)
-            img_name = f"{domain_id}_{original_name}"
-            img_path = os.path.join(download_folder, img_name)
+        if not img_url or urlparse(img_url).scheme not in ["http", "https"]:
+            print(f"Skipping invalid URL: {img_url}")
+            continue
             
+        parsed_url = urlparse(img_url)
+        original_name = os.path.basename(parsed_url.path)
+        
+        # Skip if filename is empty
+        if not original_name:
+            print(f"Skipping URL with no filename: {img_url}")
+            continue
+            
+        img_name = f"{domain_id}_{original_name}"
+        img_path = os.path.join(download_folder, img_name)
+        
+        try:
+            # Try with verification first
+            response = requests.get(
+                img_url, 
+                headers=default_headers, 
+                stream=True, 
+                verify=True,
+                timeout=TIMEOUT
+            )
+            response.raise_for_status()
+            
+            # Check if content type is image
+            content_type = response.headers.get('content-type', '')
+            if not content_type.startswith('image/'):
+                print(f"Skipping non-image content type ({content_type}): {img_url}")
+                continue
+                
+            # Check file size before downloading
+            content_length = int(response.headers.get('content-length', 0))
+            if content_length > 10 * 1024 * 1024:  # 10MB limit
+                print(f"Skipping large image ({content_length/1024/1024:.2f}MB): {img_url}")
+                continue
+            
+            with open(img_path, "wb") as img_file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        img_file.write(chunk)
+            print(f"Downloaded image: {img_path}")
+            img_data["local_path"] = img_path
+            
+        except requests.exceptions.SSLError:
+            print(f"SSL verification failed for {img_url}, retrying without verification...")
             try:
-                # Try with verification first
                 response = requests.get(
                     img_url, 
                     headers=default_headers, 
                     stream=True, 
-                    verify=True  # Enable certificate verification
+                    verify=False,
+                    timeout=TIMEOUT
                 )
                 response.raise_for_status()
                 
                 with open(img_path, "wb") as img_file:
-                    for chunk in response.iter_content(1024):
-                        img_file.write(chunk)
-                print(f"Downloaded image: {img_path}")
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            img_file.write(chunk)
+                print(f"Downloaded image (insecure): {img_path}")
                 img_data["local_path"] = img_path
                 
-            except requests.exceptions.SSLError:
-                # If SSL verification fails, try without verification
-                print(f"SSL verification failed for {img_url}, retrying without verification...")
-                try:
-                    response = requests.get(
-                        img_url, 
-                        headers=default_headers, 
-                        stream=True, 
-                        verify=False
-                    )
-                    response.raise_for_status()
-                    
-                    with open(img_path, "wb") as img_file:
-                        for chunk in response.iter_content(1024):
-                            img_file.write(chunk)
-                    print(f"Downloaded image (insecure): {img_path}")
-                    img_data["local_path"] = img_path
-                    
-                except Exception as e:
-                    print(f"Failed to download image {img_url}: {e}")
-                    
-            except Exception as e:
-                print(f"Failed to download image {img_url}: {e}")
-        else:
-            print(f"Skipping invalid URL: {img_url}")
+            except requests.exceptions.Timeout:
+                print(f"Timeout downloading image {img_url}")
+            except requests.exceptions.RequestException as e:
+                print(f"Failed to download image {img_url}: {str(e)}")
+                
+        except requests.exceptions.Timeout:
+            print(f"Timeout downloading image {img_url}")
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to download image {img_url}: {str(e)}")
+        except Exception as e:
+            print(f"Unexpected error downloading {img_url}: {str(e)}")
 
 # if __name__ == "__main__":
 #     # Load the parquet file
