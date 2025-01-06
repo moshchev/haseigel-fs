@@ -1,22 +1,23 @@
-from PIL import Image
-from ..core.image_models import MobileViTClassifier, OpenAIImageClassifier
+from app.config.models import MODEL_CLASSES
 
-MODEL_REGISTRY = {
-    'mobilevit_v2': MobileViTClassifier(),
-    # 'openai': OpenAIImageClassifier()
-}
+MODEL_REGISTRY = {model_name: None for model_name in MODEL_CLASSES}
 
-def classify_image(image_file, model_name: str):
+def get_model(model_name: str):
+    """Lazy initialization of models"""
     if model_name not in MODEL_REGISTRY:
         raise ValueError(f"Model '{model_name}' not found. Available models: {list(MODEL_REGISTRY.keys())}")
     
-    # Load and preprocess the image
-    image = Image.open(image_file)
+    if MODEL_REGISTRY[model_name] is None:
+        MODEL_REGISTRY[model_name] = MODEL_CLASSES[model_name]()
     
+    return MODEL_REGISTRY[model_name]
+
+
+def classify_image(image_file, model_name: str):
     # Get the appropriate model
-    model = MODEL_REGISTRY[model_name]
+    model = get_model(model_name)
     
     # Perform classification
-    result = model.predict(image)
+    result = model.predict(image_file)
     
     return result

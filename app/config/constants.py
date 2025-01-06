@@ -2,12 +2,6 @@
 TARGET_IMAGE_SIZE = (512, 512)
 SUPPORTED_IMAGE_FORMATS = ['jpg', 'jpeg', 'png']
 
-# Models 
-MODELS = {
-    'OPENAI': 'gpt-4o-mini',
-    'FIREWORKS_LLAMA': 'fireworks_ai/accounts/fireworks/models/llama-v3p2-11b-vision-instruct'
-}
-
 # API Response Messages
 ERROR_MESSAGES = {
     'NO_IMAGE': 'No image file provided',

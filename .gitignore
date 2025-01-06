@@ -1,8 +1,9 @@
 # env & data
 .haseigel
-data/
+app/data/
 .env
 .venv
+data/images/test_set/
 
 #cache
 __pycache__/
@@ -15,3 +16,8 @@ __pycache__/
 
 # intermediate results
 *.json
+*.parquet
+
+# models
+
+*.mf

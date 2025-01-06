@@ -1,23 +1,45 @@
 from litellm import completion
+import litellm
 from dotenv import load_dotenv
 import os
 import sys
-
+import base64
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app.core.response_validation import ImagePrompts
-from app.utils.image_preprocessing import encode_image_to_base64
+from app.core.response_validation import ImagePrompts , NoCategoriesSchema , create_dynamic_schema
 
 load_dotenv()
-model="fireworks_ai/accounts/fireworks/models/llama-v3p2-11b-vision-instruct"
-# img = '/Users/alexander/Desktop/projects/haseigel-fs/app/data/images/temp/0_cuscinetti_a_sfere-315x242.jpg'
-img = '/Users/alexander/Desktop/projects/haseigel-fs/data/images/temp/Wintergrillen 992x661.jpg.webp'
-base64_img = encode_image_to_base64(img)
+model_qwen = 'fireworks_ai/accounts/fireworks/models/qwen2-vl-72b-instruct'
+img = 'data/images/temp/Wintergrillen 992x661.jpg.webp'
+
+
+# # encode image to base64
+with open(img, 'rb') as image_file:
+    encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
+
+schema = create_dynamic_schema(['grill', 'axe', 'hammer'])
+prompt = ImagePrompts.NO_CATEGORIES_PROMPT
+
+litellm.enable_json_schema_validation=True
 
 response = completion(
-    model=model, 
+    model=model_qwen, 
     messages=[
-       {"role": "user", "content": ImagePrompts.get_categorized_prompt(['grill', 'axe', 'hammer'])},
-       {"role": "user", "content": f"data:image/jpeg;base64,{base64_img}"}
-   ],
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": prompt
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url":f"data:image/jpeg;base64,{encoded_string}"
+                    }
+                }
+            ]
+        }
+    ],
+    # response_format=schema
 )
-print(response.choices[0].message.content)
+print(response)

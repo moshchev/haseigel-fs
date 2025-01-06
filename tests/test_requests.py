@@ -16,7 +16,7 @@ def test_domains():
     print('got the data')
 
     # Send POST request to localhost with input data
-    response = requests.post('http://127.0.0.1:5000/process-domains', json=input_data)
+    response = requests.post('http://0.0.0.0:5000/process-domains', json=input_data)
     # Check if request was successful
     if response.status_code == 200:
         print('Successfully sent data to server')
@@ -27,14 +27,14 @@ def test_domains():
 
 def test_image():
     image_path = '/Users/alexander/Desktop/projects/haseigel-fs/data/images/temp/0_1156A.jpeg-200x200.jpg'
-    response = requests.post('http://127.0.0.1:5000/model/mobilevit_v2', files={'image': open(image_path, 'rb')})
+    response = requests.post('http://0.0.0.0:5000/model/mobilevit_v2', files={'image': open(image_path, 'rb')})
     print(response.json())
 
 def test_html():
     assert load_dotenv()
     engine = create_db_engine()
     input_data = get_random_html(engine)
-    response = requests.post('http://127.0.0.1:5000/process-html', json=input_data)
+    response = requests.post('http://0.0.0.0:5000/process-html', json=input_data)
     print(response.json())
 
 if __name__ == "__main__":

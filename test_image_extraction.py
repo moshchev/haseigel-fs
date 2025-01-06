@@ -4,7 +4,7 @@ from app.utils.data_tool import get_html_data_as_json, create_db_engine, get_ran
 import requests
 from collections import defaultdict
 from app.config import TEMP_IMAGE_DIR
-from app.core.image_models import MobileViTClassifier
+from app.core.image_models import VisionLanguageModelClassifier
 import logging
 import os
 from urllib.parse import urljoin, urlparse
@@ -96,7 +96,6 @@ def extract_img_attributes(html, base_url):
         # Convert relative URLs to absolute URLs
         if img_url and urlparse(img_url).scheme == "":
             img_url = urljoin(base_url, img_url)
-            logging.info(f"Converted relative URL to absolute: {img_url}")
 
         # Replace backslashes with forward slashes
         if img_url:
@@ -172,7 +171,7 @@ if __name__ == "__main__":
         exit(1)
 
     # Initialize the MobileViTClassifier
-    model = MobileViTClassifier()
+    model = VisionLanguageModelClassifier()
 
     logging.info("Processing HTML content.")
     results = process_html(html, base_url, model)
