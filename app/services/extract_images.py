@@ -5,20 +5,20 @@ from urllib.parse import urlparse
 from urllib.request import urlretrieve
 import requests
 from app.config import TEMP_IMAGE_DIR
+from urllib.parse import urljoin, urlparse
 
 def extract_img_attributes(html, base_url):
     """
     Parses the HTML to extract attributes of all <img> tags and processes the 'src' attribute.
+    Filters out duplicate image URLs.
 
     Args:
         html (str): The HTML content.
         base_url (str): The base URL to resolve relative paths in 'src' attributes.
 
     Returns:
-        list: A list of dictionaries containing attributes of each <img> tag, with the 'src' modified.
+        list: A list of dictionaries containing unique attributes of each <img> tag.
     """
-    from urllib.parse import urljoin, urlparse
-    from bs4 import BeautifulSoup
 
     # Parse the HTML content
     soup = BeautifulSoup(html, 'lxml')
@@ -28,6 +28,7 @@ def extract_img_attributes(html, base_url):
 
     # Initialize list to store each img tag's attributes as dictionaries
     img_data = []
+    seen_urls = set()  # Keep track of URLs we've already processed
 
     # Loop through each img tag and extract attributes
     for img in img_tags:
@@ -42,11 +43,13 @@ def extract_img_attributes(html, base_url):
         # Replace backslashes with forward slashes
         if img_url:
             img_url = img_url.replace("\\", "/")
-
-        # Update the 'src' attribute in the dictionary
-        img_attributes["src"] = img_url
-        img_data.append(img_attributes)  # Append dictionary to the list
-
+            
+            # Only add the image if we haven't seen this URL before
+            if img_url not in seen_urls:
+                seen_urls.add(img_url)
+                img_attributes["src"] = img_url
+                img_data.append(img_attributes)
+    
     return img_data
 
 
@@ -60,36 +63,60 @@ def save_combined_html(df, output_file="../data/combined.html"):
 def download_images_with_local_path(dict_list, download_folder=TEMP_IMAGE_DIR):
     """
     Downloads images from URLs in a list of dictionaries and adds local file paths.
-    
-    Args:
-        dict_list (list): List of dictionaries containing image attributes.
-        download_folder (str): Path where images will be downloaded to.
-            Defaults to the TEMP_IMAGE_DIR from config.
+    Includes domain_id in the filename.
     """
-    # Ensure the download folder exists
     os.makedirs(download_folder, exist_ok=True)
-    default_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'}
+    default_headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
+    }
     
-    for index, img_data in enumerate(dict_list):
+    for img_data in dict_list:
         img_url = img_data.get("src")
+        domain_id = img_data.get("domain_id")
         
-        # Check if URL is valid and not a data URI
         if img_url and urlparse(img_url).scheme in ["http", "https"]:
-            # Generate a filename for the image
-            img_name = f"{index}_{os.path.basename(urlparse(img_url).path)}"
-            img_path = os.path.join(download_folder, img_name)  # Full path to the image
+            parsed_url = urlparse(img_url)
+            original_name = os.path.basename(parsed_url.path)
+            img_name = f"{domain_id}_{original_name}"
+            img_path = os.path.join(download_folder, img_name)
             
             try:
-                # Download the image
-                response = requests.get(img_url, headers=default_headers, stream=True, verify=False)
+                # Try with verification first
+                response = requests.get(
+                    img_url, 
+                    headers=default_headers, 
+                    stream=True, 
+                    verify=True  # Enable certificate verification
+                )
                 response.raise_for_status()
+                
                 with open(img_path, "wb") as img_file:
                     for chunk in response.iter_content(1024):
                         img_file.write(chunk)
                 print(f"Downloaded image: {img_path}")
-                
-                # Set the absolute path in the dictionary
                 img_data["local_path"] = img_path
+                
+            except requests.exceptions.SSLError:
+                # If SSL verification fails, try without verification
+                print(f"SSL verification failed for {img_url}, retrying without verification...")
+                try:
+                    response = requests.get(
+                        img_url, 
+                        headers=default_headers, 
+                        stream=True, 
+                        verify=False
+                    )
+                    response.raise_for_status()
+                    
+                    with open(img_path, "wb") as img_file:
+                        for chunk in response.iter_content(1024):
+                            img_file.write(chunk)
+                    print(f"Downloaded image (insecure): {img_path}")
+                    img_data["local_path"] = img_path
+                    
+                except Exception as e:
+                    print(f"Failed to download image {img_url}: {e}")
+                    
             except Exception as e:
                 print(f"Failed to download image {img_url}: {e}")
         else:

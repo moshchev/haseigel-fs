@@ -1,150 +1,139 @@
-import logging
-import os
-import json
-from urllib.parse import urljoin, urlparse
-from bs4 import BeautifulSoup
-import requests
-from dotenv import load_dotenv
+from collections import defaultdict
+from typing import List, Dict, Any
+from app.services.extract_images import extract_img_attributes, download_images_with_local_path
 from app.utils.data_tool import get_html_data_as_json, create_db_engine
+from dotenv import load_dotenv
+from app.core.image_models import MobileViTClassifier
+from urllib.parse import urlparse
 from app.config import TEMP_IMAGE_DIR
 
-class HTMLImageExtractor:
-    def __init__(self):
-        self.extracted_images = []
 
-    def process_html(self, html_data_list):
-        """
-        Process multiple HTML documents and extract image information.
+def collect_image_data(html_data_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Collects image data from multiple HTML and organizes it by domain ID.
+    Filters images to include only .jpeg, .jpg, .png extensions and excludes 'logo' in filename.
+    
+    Args:
+        html_data_list: List of dictionaries containing:
+            - domain_start_id: ID of the domain
+            - base_url: Base URL for the domain
+            - response_text: HTML content
         
-        Args:
-            html_data_list (list): List of dicts containing:
-                - response_text: HTML content
-                - base_url: Base URL for the HTML
-                - domain_id: Unique identifier for the domain
-                
-        Returns:
-            list: Combined list of image data with domain references
-        """
-        for html_data in html_data_list:
-            html = html_data.get('response_text')[0]
-            base_url = html_data.get('base_url')[0]
-            domain_id = html_data.get('domain_start_id')
+    Returns:
+        List of dictionaries with structure: 
+        [{'domain_id': domain_id, 'images': ['http://...', 'http://...']}]
+    """
+    domain_images = {}
+    valid_extensions = ('.jpeg', '.jpg', '.png')
+    
+    for data in html_data_list:
+        domain_id = data['domain_start_id']
+        base_url = data['base_url'][0]
+        html = data['response_text'][0]
+        
+        # Get image data for this HTML
+        img_data = extract_img_attributes(html, base_url)
+        
+        # Extract URLs and filter by extension and exclude logos
+        image_urls = [
+            img.get('src') for img in img_data 
+            if img.get('src') and (
+                any(img.get('src').lower().endswith(ext) for ext in valid_extensions) and
+                'logo' not in img.get('src').lower()
+            )
+        ]
+        
+        # Add to domain_images dict
+        if domain_id in domain_images:
+            domain_images[domain_id].extend(image_urls)
+            # Remove duplicates while preserving order
+            domain_images[domain_id] = list(dict.fromkeys(domain_images[domain_id]))
+        else:
+            domain_images[domain_id] = image_urls
+    
+    # Convert to final format
+    result = [
+        {'domain_id': domain_id, 'images': images}
+        for domain_id, images in domain_images.items()
+    ]
+    
+    return result
 
-            if not all([html, base_url, domain_id]):
-                logging.warning(f"Skipping HTML with missing data. Domain ID: {domain_id}")
-                continue
 
-            images = self._extract_images_from_html(html, base_url, domain_id)
-            self.extracted_images.extend(images)
-            
-            logging.info(f"Processed HTML for domain {domain_id}, found {len(images)} images")
+def download_images(image_data: List[Dict[str, List[str]]], temp_dir: str) -> List[Dict[str, Any]]:
+    """
+    Downloads all images from the collected image data.
+    
+    Args:
+        image_data: List of dictionaries with structure {'domain_id': id, 'images': [urls]}
+        temp_dir: Directory to store downloaded images
+        
+    Returns:
+        List of dictionaries containing downloaded image information
+    """
+    downloaded_images = []
+    
+    for domain_data in image_data:
+        domain_id = domain_data['domain_id']
+        image_urls = domain_data['images']
+        
+        # Create list of dicts with URLs and domain_id
+        images_to_download = [
+            {'src': url, 'domain_id': domain_id}
+            for url in image_urls
+        ]
+        
+        # Download images with domain-specific names
+        download_images_with_local_path(images_to_download, temp_dir)
+        
+        # Filter out failed downloads
+        downloaded_images.extend([img for img in images_to_download if img.get("local_path")])
+    
+    return downloaded_images
 
-        return self.extracted_images
+def process_images_with_model(image_data: List[Dict[str, Any]], model) -> Dict[str, Any]:
+    """
+    Processes downloaded images with the classification model.
+    
+    Args:
+        image_data: List of dictionaries containing image data with local paths
+        model: Classification model instance
+        
+    Returns:
+        Dictionary containing predictions and statistics
+    """
+    results = {
+        "predictions": [],
+        "statistics": defaultdict(int)
+    }
 
-    def _extract_images_from_html(self, html, base_url, domain_id):
-        """
-        Extract image information from a single HTML document.
-        """
-        soup = BeautifulSoup(html, 'lxml')
-        img_tags = soup.find_all('img')
-        img_data = []
+    for img in image_data:
+        if not img.get("local_path"):
+            continue
 
-        for img in img_tags:
-            img_attributes = img.attrs
-            img_url = img_attributes.get("src")
-            
-            if not img_url:
-                continue
+        if not any(img["local_path"].lower().endswith(ext) for ext in [".jpeg", ".jpg", ".png"]) and "logo" not in img["local_path"].lower():
+            continue
 
-            if urlparse(img_url).scheme == "":
-                img_url = urljoin(base_url, img_url)
-
-            img_url = img_url.replace("\\", "/")
-
-            img_data.append({
-                "src": img_url,
-                "domain_id": domain_id,
-                "original_attributes": img_attributes,
-                "base_url": base_url
+        try:
+            prediction = model.predict(img["local_path"])['prediction']
+            results["predictions"].append({
+                "image_path": img["local_path"],
+                "predicted_class": prediction,
+                "original_url": img.get("src", "")
             })
+            results["statistics"][prediction] += 1
+        except Exception as e:
+            print(f"Error classifying image {img['local_path']}: {e}")
 
-        return img_data
+    return results
 
-class ImageDownloader:
-    def __init__(self, download_folder=TEMP_IMAGE_DIR):
-        self.download_folder = download_folder
-        self.default_headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
-        }
-        os.makedirs(download_folder, exist_ok=True)
-
-    def download_bulk_images(self, image_data_list):
-        """
-        Downloads multiple images and updates their local paths.
-        
-        Args:
-            image_data_list (list): List of image data dictionaries
-            
-        Returns:
-            list: Updated image data list with local paths
-        """
-        for img_data in image_data_list:
-            img_url = img_data.get("src")
-            domain_id = img_data.get("domain_id")
-            
-            if not (img_url and domain_id):
-                continue
-
-            if urlparse(img_url).scheme in ["http", "https"]:
-                original_name = os.path.basename(urlparse(img_url).path)
-                if not original_name:
-                    original_name = "unnamed_image.jpg"
-                
-                # Create filename with domain_id prefix
-                img_name = f"{domain_id}_{original_name}"
-                img_path = os.path.join(self.download_folder, img_name)
-                
-                try:
-                    response = requests.get(
-                        img_url, 
-                        headers=self.default_headers, 
-                        stream=True, 
-                        verify=False
-                    )
-                    response.raise_for_status()
-                    
-                    with open(img_path, "wb") as img_file:
-                        for chunk in response.iter_content(1024):
-                            img_file.write(chunk)
-                    
-                    logging.info(f"Downloaded image: {img_path}")
-                    img_data["local_path"] = img_path
-                    
-                except Exception as e:
-                    logging.warning(f"Failed to download image {img_url} for domain {domain_id}: {e}")
-            else:
-                logging.warning(f"Skipping invalid URL: {img_url}")
-        
-        return image_data_list
-
-# Example usage in main:
 if __name__ == "__main__":
     assert load_dotenv()
     engine = create_db_engine()
     html_data_list = get_html_data_as_json(engine)
-
-    # Extract images from all HTMLs
-    extractor = HTMLImageExtractor()
-    all_image_data = extractor.process_html(html_data_list['data'])
-    logging.info(f"Total images found: {len(all_image_data)}")
-
-    # Download all images
-    downloader = ImageDownloader()
-    downloaded_image_data = downloader.download_bulk_images(all_image_data)
-    logging.info("Completed bulk image downloads")
-
-    # Optional: Save the results
-    output_file = "bulk_image_processing_results.json"
-    with open(output_file, "w", encoding="utf-8") as file:
-        json.dump(downloaded_image_data, file, indent=4)
-    logging.info(f"Results saved to {output_file}")
+    model = MobileViTClassifier()
+    
+    # Collect image data
+    image_data = collect_image_data(html_data_list['data'])
+    downloaded_images = download_images(image_data, TEMP_IMAGE_DIR)
+    print(downloaded_images)
