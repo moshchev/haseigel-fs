@@ -96,7 +96,6 @@ def extract_img_attributes(html, base_url):
         # Convert relative URLs to absolute URLs
         if img_url and urlparse(img_url).scheme == "":
             img_url = urljoin(base_url, img_url)
-            logging.info(f"Converted relative URL to absolute: {img_url}")
 
         # Replace backslashes with forward slashes
         if img_url:
