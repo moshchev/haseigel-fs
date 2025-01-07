@@ -206,34 +206,36 @@ class ImageLoader:
             filenames, images = zip(*batch)  # Separate filenames and images
             yield filenames, images
 
-# Define input directory and batch size
-image_folder = "data/images/test_set"
-batch_size = 4
-output_file = "results.json"
 
-# Define queries for the model
-queries = [
-    "is there a cat in this image? answer yes or no",
-    "is there a dog in this image? answer yes or no",
-    "is there a giraffe in this image? answer yes or no",
-]
+if __name__ == "__main__":
+    # Define input directory and batch size
+    image_folder = "data/images/test_set"
+    batch_size = 4
+    output_file = "results.json"
 
-# Initialize the image loader
-image_loader = ImageLoader(folder_path=image_folder, target_size=(512, 512), max_workers=8)
+    # Define queries for the model
+    queries = [
+        "is there a cat in this image? answer yes or no",
+        "is there a dog in this image? answer yes or no",
+        "is there a giraffe in this image? answer yes or no",
+    ]
 
-# Initialize the MoondreamProcessor
-moondream_processor = MoondreamProcessor()
+    # Initialize the image loader
+    image_loader = ImageLoader(folder_path=image_folder, target_size=(512, 512), max_workers=8)
 
-# Process images in batches
-for batch in image_loader.batch_images(batch_size=batch_size):
-    print("Processing a new batch of images...")
-    results = asyncio.run(moondream_processor.process_batch(batch, queries, output_file))
+    # Initialize the MoondreamProcessor
+    moondream_processor = MoondreamProcessor()
 
-    # Print results for this batch
-    for filename, answers in results.items():
-        print(f"Results for {filename}: {answers}")
+    # Process images in batches
+    for batch in image_loader.batch_images(batch_size=batch_size):
+        print("Processing a new batch of images...")
+        results = asyncio.run(moondream_processor.process_batch(batch, queries, output_file))
 
-    # Break after one batch for testing (remove this line for full processing)
-    break
+        # Print results for this batch
+        for filename, answers in results.items():
+            print(f"Results for {filename}: {answers}")
 
-print(f"Results saved to {output_file}")
+        # Break after one batch for testing (remove this line for full processing)
+        break
+
+    print(f"Results saved to {output_file}")
