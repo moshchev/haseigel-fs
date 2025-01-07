@@ -253,23 +253,19 @@ class MoondreamProcessor:
         return final_results
 
 class AsyncVisionLanguageModelClassifier():
-    def __init__(self, model_name:str=LLMS['FIREWORKS_QWEN']):
+    def __init__(self, model_name: str = LLMS['FIREWORKS_QWEN']):
         self.model_name = model_name
         self.system_prompt = ImagePrompts.DEFAULT_PROMPT
-    
+
     @staticmethod
     def clean_llm_output(text):
-        # Remove markdown indicators
         text = text.replace('```json', '').replace('```', '')
-        
-        # Remove newlines and extra spaces
         text = text.replace('\n', '').replace('  ', '')
-        
         return json.loads(text)
-    
+
     async def _prepare_message(self, image_path:str, prompt:str) -> list[dict]:
         base64_image = prepare_image(image_path)
-        messages=[
+        messages = [
             {
                 "role": "user",
                 "content": [
@@ -280,20 +276,43 @@ class AsyncVisionLanguageModelClassifier():
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url":f"data:image/jpeg;base64,{base64_image}"
+                            "url": f"data:image/jpeg;base64,{base64_image}"
                         }
                     }
                 ]
             }
         ]
         return messages
+
+    async def prepare_batch_messages(
+        self,
+        image_paths: list[str], 
+        categories: list[str] = None, 
+        batch_size: int = 2
+    ) -> list[list[dict]]:
+        """
+        Prepare messages for a batch of images asynchronously.
+        """
+        if categories:
+            prompt = ImagePrompts.get_categorized_prompt(categories)
+        else:
+            prompt = ImagePrompts.NO_CATEGORIES_PROMPT
+
+        all_messages = []
+        
+        for i in range(0, len(image_paths), batch_size):
+            batch = image_paths[i:i + batch_size]
+            tasks = [self._prepare_message(path, prompt) for path in batch]
+            batch_messages = await asyncio.gather(*tasks)
+            all_messages.extend(batch_messages)
+        
+        return all_messages
     
     async def predict(self, image_path:str, categories:list[str]=None) -> dict:
         if categories:
             prompt = ImagePrompts.get_categorized_prompt(categories)
         else:
-            pass
-            # Write new prompt
+            prompt = "<INSERT YOUR DEFAULT PROMPT HERE>"
 
         messages = await self._prepare_message(image_path, prompt)
 
@@ -301,20 +320,42 @@ class AsyncVisionLanguageModelClassifier():
             model=self.model_name, 
             messages=messages,
         )
-
-        # return self.clean_llm_output(response.choices[0].message.content)
         return response.choices[0].message.content
     
-    async def predict_batch(self, image_paths:list[str], categories:list[str]=None) -> list[dict]:
+    async def predict_batch(
+        self,
+        image_paths: list[str],
+        categories: list[str] = None,
+        prep_batch_size: int = 2,
+        request_batch_size: int = 2
+    ) -> list[dict]:
         """
-        Process a batch of images concurrently.
+        Processes images in *two* stages:
+        1) Prepares all messages in batches (to avoid memory blowup).
+        2) Sends those messages to the server in smaller chunks (request_batch_size).
+        """
+        # Stage 1: Prepare all messages
+        batch_messages = await self.prepare_batch_messages(
+            image_paths, 
+            categories, 
+            batch_size=prep_batch_size
+        )
+        # batch_messages now has one entry per image
+
+        results = []
+        # Stage 2: Send messages in smaller chunks, so you don't overload the server
+        for i in range(0, len(batch_messages), request_batch_size):
+            sub_batch = batch_messages[i:i + request_batch_size]
+            sub_tasks = [
+                litellm.acompletion(model=self.model_name, messages=messages)
+                for messages in sub_batch
+            ]
+            responses = await asyncio.gather(*sub_tasks)
+
+            # Match each response with its corresponding image path
+            for idx, response in enumerate(responses):
+                file_path = image_paths[i + idx]
+                prediction = response.choices[0].message.content
+                results.append({"file_path": file_path, "prediction": prediction})
         
-        Args:
-            image_paths: List of paths to images to process
-            categories: Optional list of categories to classify against
-            
-        Returns:
-            List of prediction results for each image
-        """
-        tasks = [self.predict(img_path, categories) for img_path in image_paths]
-        return await asyncio.gather(*tasks)
+        return results

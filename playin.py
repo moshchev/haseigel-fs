@@ -1,12 +1,128 @@
 from collections import defaultdict
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
+import asyncio
+from PIL import Image
 from app.services.extract_images import extract_img_attributes, download_images_with_local_path
 from app.utils.data_tool import get_html_data_as_json, create_db_engine
 from dotenv import load_dotenv
-from app.core.image_models import MobileViTClassifier
+from app.core.image_models import MobileViTClassifier, AsyncVisionLanguageModelClassifier
 from urllib.parse import urlparse
 from app.config import TEMP_IMAGE_DIR
+from tests.moondream_transformers import ImageLoader
+import os
 
+class ImageProcessor:
+    def __init__(self, model_type: str = "local"):
+        """
+        Initialize the image processor with specified model type.
+        
+        Args:
+            model_type: "local" or "hosted" 
+        """
+        self.model_type = model_type
+        self.model = self._initialize_model()
+        
+    def _initialize_model(self):
+        if self.model_type == "local":
+            return MobileViTClassifier()
+        elif self.model_type == "hosted":
+            return AsyncVisionLanguageModelClassifier()
+        else:
+            raise ValueError(f"Invalid model type: {self.model_type}")
+
+
+async def producer_local(image_loader: ImageLoader, queue: asyncio.Queue, batch_size: int = 8):
+    """
+    Produces batches of images from the ImageLoader.
+    """
+    image_loader = ImageLoader(folder_path=TEMP_IMAGE_DIR, target_size=(512, 512), max_workers=8)
+    for batch in image_loader.batch_images(batch_size):
+        await queue.put(batch)
+    # Signal completion
+    await queue.put(None)
+
+
+async def consumer_local(queue: asyncio.Queue, model):
+    """
+    Consumes image batches and processes them with local model.
+    """
+    results = []
+    while True:
+        batch = await queue.get()
+        if batch is None:
+            break
+            
+        filenames, images = batch
+        try:
+            # Process batch with local model
+            for filename, img in zip(filenames, images):
+                prediction = model.predict(img)['prediction']
+                results.append({
+                    "image_path": filename,
+                    "predicted_class": prediction
+                })
+        except Exception as e:
+            print(f"Error processing batch: {e}")
+        finally:
+            queue.task_done()
+    return results
+
+async def consumer_vllm(queue: asyncio.Queue, model: AsyncVisionLanguageModelClassifier, categories: List[str] = None):
+    """
+    Consumes batches of image paths and processes them with VLLM model.
+    """
+    results = []
+    while True:
+        batch = await queue.get()
+        if batch is None:
+            break
+            
+        try:
+            # Process entire batch at once
+            predictions = await model.predict_batch(batch, categories)
+            
+            # Store results
+            for path, prediction in zip(batch, predictions):
+                results.append({
+                    "image_path": path,
+                    "predicted_class": prediction
+                })
+        except Exception as e:
+            print(f"Error processing batch: {e}")
+        finally:
+            queue.task_done()
+    return results
+
+
+async def process_images(categories:list[str]=None, model_type: str = "hosted", batch_size: int = 8):
+    """
+    Main processing function that sets up and runs the producer-consumer pattern.
+    """
+    # Initialize image loader
+    image_loader = ImageLoader(TEMP_IMAGE_DIR, target_size=(512, 512))
+    
+    # Initialize queue
+    queue = asyncio.Queue()
+    
+    # Initialize processor
+    processor = ImageProcessor(model_type)
+    
+    # Create tasks
+    
+    if model_type == "local":
+        producer_task = asyncio.create_task(producer_local(image_loader, queue, batch_size))
+        consumer_task = asyncio.create_task(consumer_local(queue, processor.model))
+    elif model_type == "hosted":
+        producer_task = asyncio.create_task(producer_vllm(image_loader, queue, batch_size))
+        consumer_task = asyncio.create_task(consumer_vllm(queue, processor.model, categories))
+    else:
+        raise ValueError(f"Invalid model type: {model_type}")
+    
+    # Wait for both tasks to complete
+    await producer_task
+    results = await consumer_task
+    
+    return results
 
 def collect_image_data(html_data_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
@@ -59,7 +175,6 @@ def collect_image_data(html_data_list: List[Dict[str, Any]]) -> List[Dict[str, A
     
     return result
 
-
 def download_images(image_data: List[Dict[str, List[str]]], temp_dir: str) -> List[Dict[str, Any]]:
     """
     Downloads all images from the collected image data.
@@ -91,49 +206,65 @@ def download_images(image_data: List[Dict[str, List[str]]], temp_dir: str) -> Li
     
     return downloaded_images
 
-def process_images_with_model(image_data: List[Dict[str, Any]], model) -> Dict[str, Any]:
-    """
-    Processes downloaded images with the classification model.
+# def organize_predictions_by_domain(predictions: List[Dict[str, Any]], downloaded_images: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+#     """
+#     Organizes predictions by domain ID using the downloaded images data.
     
-    Args:
-        image_data: List of dictionaries containing image data with local paths
-        model: Classification model instance
+#     Args:
+#         predictions: List of dictionaries with structure {"file_path": str, "prediction": dict}
+#         downloaded_images: List of dictionaries from download_images function containing domain_id and local_path
         
-    Returns:
-        Dictionary containing predictions and statistics
-    """
-    results = {
-        "predictions": [],
-        "statistics": defaultdict(int)
-    }
+#     Returns:
+#         Dictionary mapping domain IDs to lists of predictions:
+#         {
+#             "domain_id": [
+#                 {"file_path": str, "prediction": dict},
+#                 ...
+#             ]
+#         }
+#     """
+#     # Create a mapping of local_path to domain_id
+#     path_to_domain = {img["local_path"]: img["domain_id"] for img in downloaded_images}
+    
+#     # Initialize results dictionary
+#     domain_predictions = defaultdict(list)
+    
+#     # Organize predictions by domain
+#     for pred in predictions:
+#         file_path = pred["file_path"]
+#         if file_path in path_to_domain:
+#             domain_id = path_to_domain[file_path]
+#             domain_predictions[domain_id].append(pred)
+    
+#     return dict(domain_predictions)
 
-    for img in image_data:
-        if not img.get("local_path"):
-            continue
-
-        if not any(img["local_path"].lower().endswith(ext) for ext in [".jpeg", ".jpg", ".png"]) and "logo" not in img["local_path"].lower():
-            continue
-
-        try:
-            prediction = model.predict(img["local_path"])['prediction']
-            results["predictions"].append({
-                "image_path": img["local_path"],
-                "predicted_class": prediction,
-                "original_url": img.get("src", "")
-            })
-            results["statistics"][prediction] += 1
-        except Exception as e:
-            print(f"Error classifying image {img['local_path']}: {e}")
-
-    return results
-
-if __name__ == "__main__":
+async def main():
     assert load_dotenv()
     engine = create_db_engine()
     html_data_list = get_html_data_as_json(engine)
-    model = MobileViTClassifier()
     
-    # Collect image data
+    # Collect and download images
     image_data = collect_image_data(html_data_list['data'])
     downloaded_images = download_images(image_data, TEMP_IMAGE_DIR)
-    print(downloaded_images)
+    
+    # Process images with specified model
+    processor = ImageProcessor(model_type="hosted")
+    image_paths = [img["local_path"] for img in downloaded_images]
+    results = await processor.model.predict_batch(image_paths, categories=["hammer", "nail", "tape"])
+    print(results)
+    return results
+
+if __name__ == "__main__":
+    asyncio.run(main())
+    # assert load_dotenv()
+    # engine = create_db_engine()
+    # html_data_list = get_html_data_as_json(engine)
+    
+    # # Collect and download images
+    # image_data = collect_image_data(html_data_list['data'])
+    # downloaded_images = download_images(image_data, TEMP_IMAGE_DIR)
+    # print(downloaded_images)
+    # loader =ImageLoader(TEMP_IMAGE_DIR, target_size=(512, 512), max_workers=8)
+    # loader.load_images()
+    # for batch in loader.batch_images(batch_size=8):
+    #     print(batch)
