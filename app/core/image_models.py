@@ -251,3 +251,70 @@ class MoondreamProcessor:
         #     json.dump(final_results, f, indent=4)
 
         return final_results
+
+class AsyncVisionLanguageModelClassifier():
+    def __init__(self, model_name:str=LLMS['FIREWORKS_QWEN']):
+        self.model_name = model_name
+        self.system_prompt = ImagePrompts.DEFAULT_PROMPT
+    
+    @staticmethod
+    def clean_llm_output(text):
+        # Remove markdown indicators
+        text = text.replace('```json', '').replace('```', '')
+        
+        # Remove newlines and extra spaces
+        text = text.replace('\n', '').replace('  ', '')
+        
+        return json.loads(text)
+    
+    async def _prepare_message(self, image_path:str, prompt:str) -> list[dict]:
+        base64_image = prepare_image(image_path)
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": prompt
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url":f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    }
+                ]
+            }
+        ]
+        return messages
+    
+    async def predict(self, image_path:str, categories:list[str]=None) -> dict:
+        if categories:
+            prompt = ImagePrompts.get_categorized_prompt(categories)
+        else:
+            pass
+            # Write new prompt
+
+        messages = await self._prepare_message(image_path, prompt)
+
+        response = await litellm.acompletion(
+            model=self.model_name, 
+            messages=messages,
+        )
+
+        # return self.clean_llm_output(response.choices[0].message.content)
+        return response.choices[0].message.content
+    
+    async def predict_batch(self, image_paths:list[str], categories:list[str]=None) -> list[dict]:
+        """
+        Process a batch of images concurrently.
+        
+        Args:
+            image_paths: List of paths to images to process
+            categories: Optional list of categories to classify against
+            
+        Returns:
+            List of prediction results for each image
+        """
+        tasks = [self.predict(img_path, categories) for img_path in image_paths]
+        return await asyncio.gather(*tasks)

@@ -1,11 +1,11 @@
 from bs4 import BeautifulSoup
 import pandas as pd
-import os
 from urllib.parse import urlparse
-from urllib.request import urlretrieve
-import requests
-from app.config import TEMP_IMAGE_DIR
 from urllib.parse import urljoin, urlparse
+import os
+import requests
+import logging
+from app.config import TEMP_IMAGE_DIR
 
 def extract_img_attributes(html, base_url):
     """
