@@ -1,11 +1,12 @@
 from bs4 import BeautifulSoup
-import pandas as pd
 from urllib.parse import urlparse
 from urllib.parse import urljoin, urlparse
 import os
 import requests
 import logging
 from app.config import TEMP_IMAGE_DIR
+
+from typing import List, Dict, Any
 
 def extract_img_attributes(html, base_url):
     """
@@ -52,13 +53,6 @@ def extract_img_attributes(html, base_url):
     
     return img_data
 
-
-def save_combined_html(df, output_file="../data/combined.html"):
-    # Combine all response text into one HTML file
-    with open(output_file, "w", encoding="utf-8") as file:
-        for html_content in df["response_text"]:
-            file.write(html_content)
-            file.write("\n")  # Separate each HTML content by a newline for readability
 
 def download_images_with_local_path(dict_list, download_folder=TEMP_IMAGE_DIR):
     """
@@ -153,23 +147,34 @@ def download_images_with_local_path(dict_list, download_folder=TEMP_IMAGE_DIR):
         except Exception as e:
             print(f"Unexpected error downloading {img_url}: {str(e)}")
 
-# if __name__ == "__main__":
-#     # Load the parquet file
-#     df = pd.read_parquet('haseigel-fs/data/HTML_data.parquet')
 
-#     # Save all HTML content into one combined HTML file
-#     save_combined_html(df)
-
-#     # Read combined HTML for parsing
-#     with open("haseigel-fs/data/combined.html", "r", encoding="utf-8") as file:
-#         combined_html = file.read()
-
-#     # Extract image attributes into a dictionary list
-#     img_data = extract_img_attributes(combined_html)
-
-#     # Download images and add local paths to the dictionary list
-#     download_images_with_local_path(img_data)
-
-#     # Optionally, convert img_data to a DataFrame and save
-#     img_df = pd.DataFrame(img_data)
-#     img_df.to_csv("data/image_attributes_with_local_path.csv", index=False)  # Save to CSV for further analysis
+def download_images(image_data: List[Dict[str, List[str]]], temp_dir: str) -> List[Dict[str, Any]]:
+    """
+    Downloads all images from the collected image data.
+    
+    Args:
+        image_data: List of dictionaries with structure {'domain_id': id, 'images': [urls]}
+        temp_dir: Directory to store downloaded images
+        
+    Returns:
+        List of dictionaries containing downloaded image information
+    """
+    downloaded_images = []
+    
+    for domain_data in image_data:
+        domain_id = domain_data['domain_id']
+        image_urls = domain_data['images']
+        
+        # Create list of dicts with URLs and domain_id
+        images_to_download = [
+            {'src': url, 'domain_id': domain_id}
+            for url in image_urls
+        ]
+        
+        # Download images with domain-specific names
+        download_images_with_local_path(images_to_download, temp_dir)
+        
+        # Filter out failed downloads
+        downloaded_images.extend([img for img in images_to_download if img.get("local_path")])
+    
+    return downloaded_images
