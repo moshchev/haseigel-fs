@@ -8,7 +8,7 @@ from app.config import TEMP_IMAGE_DIR
 
 from typing import List, Dict, Any
 
-def extract_img_attributes(html, base_url):
+def extract_img_attributes(html: str, base_url: str) -> List[Dict[str, Any]]:
     """
     Parses the HTML to extract attributes of all <img> tags and processes the 'src' attribute.
     Filters out duplicate image URLs.
@@ -54,10 +54,73 @@ def extract_img_attributes(html, base_url):
     return img_data
 
 
-def download_images_with_local_path(dict_list, download_folder=TEMP_IMAGE_DIR):
+def collect_image_data(html_data_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
-    Downloads images from URLs in a list of dictionaries and adds local file paths.
-    Includes domain_id in the filename.
+    Collects image data from multiple HTML and organizes it by domain ID.
+    Filters images to include only .jpeg, .jpg, .png extensions and excludes 'logo' in filename.
+    
+    Args:
+        html_data_list: List of dictionaries containing:
+            - domain_start_id: ID of the domain
+            - base_url: Base URL for the domain
+            - response_text: HTML content
+        
+    Returns:
+        List of dictionaries with structure: 
+        [{'domain_id': domain_id, 'images': ['http://...', 'http://...']}]
+    """
+    domain_images = {}
+    valid_extensions = ('.jpeg', '.jpg', '.png')
+    
+    for data in html_data_list:
+        domain_id = data['domain_start_id']
+        base_url = data['base_url'][0]
+        html = data['response_text'][0]
+        
+        # Get image data for this HTML
+        img_data = extract_img_attributes(html, base_url)
+        
+        # Extract URLs and filter by extension and exclude logos
+        image_urls = [
+            img.get('src') for img in img_data 
+            if img.get('src') and (
+                any(img.get('src').lower().endswith(ext) for ext in valid_extensions) and
+                'logo' not in img.get('src').lower()
+            )
+        ]
+        
+        # Add to domain_images dict
+        if domain_id in domain_images:
+            domain_images[domain_id].extend(image_urls)
+            # Remove duplicates while preserving order
+            domain_images[domain_id] = list(dict.fromkeys(domain_images[domain_id]))
+        else:
+            domain_images[domain_id] = image_urls
+    
+    # Convert to final format
+    result = [
+        {'domain_id': domain_id, 'images': images}
+        for domain_id, images in domain_images.items()
+    ]
+    
+    return result
+
+
+def download_images_with_local_path(dict_list: List[Dict[str, str]], 
+                                    download_folder: str = TEMP_IMAGE_DIR
+                                    ) -> None:
+    """
+    Downloads images from URLs provided in a list of dictionaries and saves them to a specified local folder.
+    Each image is saved with a filename that includes the domain_id to avoid conflicts.
+
+    Args:
+        dict_list (List[Dict[str, str]]): A list of dictionaries where each dictionary contains:
+            - 'src': The URL of the image to download.
+            - 'domain_id': The ID of the domain associated with the image.
+        download_folder (str): The directory where the images will be saved. Defaults to TEMP_IMAGE_DIR.
+
+    Returns:
+        None
     """
     os.makedirs(download_folder, exist_ok=True)
     default_headers = {
@@ -148,7 +211,9 @@ def download_images_with_local_path(dict_list, download_folder=TEMP_IMAGE_DIR):
             print(f"Unexpected error downloading {img_url}: {str(e)}")
 
 
-def download_images(image_data: List[Dict[str, List[str]]], temp_dir: str) -> List[Dict[str, Any]]:
+def download_images(image_data: List[Dict[str, List[str]]], 
+                    temp_dir: str = TEMP_IMAGE_DIR
+                    ) -> List[Dict[str, Any]]:
     """
     Downloads all images from the collected image data.
     
