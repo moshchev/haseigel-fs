@@ -18,9 +18,13 @@ import torch
 from app.utils import prepare_image
 from app.core.response_validation import create_dynamic_schema, ImagePrompts, NoCategoriesSchema
 
-# Models
+# Models that you can plug into litellm and directly use in the codebase
+# you can also add your own models here, they should be compatible with openai standards
+# I recommend using the sglang for serving your own models, and it will be compatible with litellm
+# https://docs.litellm.ai/docs/providers/openai_compatible  
+
 LLMS = {
-    'OPENAI': 'gpt-4o-mini',
+    'OPENAI': 'openai/gpt-4o-mini',
     'FIREWORKS_LLAMA': 'fireworks_ai/accounts/fireworks/models/llama-v3p2-11b-vision-instruct',
     'FIREWORKS_QWEN': 'fireworks_ai/accounts/fireworks/models/qwen2-vl-72b-instruct',
 }
@@ -326,7 +330,7 @@ class AsyncVisionLanguageModelClassifier():
         self,
         image_paths: list[str],
         categories: list[str] = None,
-        prep_batch_size: int = 2,
+        prep_batch_size: int = 20,
         request_batch_size: int = 2
     ) -> list[dict]:
         """
