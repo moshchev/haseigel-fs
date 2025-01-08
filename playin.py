@@ -11,7 +11,7 @@ from app.config import TEMP_IMAGE_DIR
 from tests.moondream_transformers import ImageLoader
 import os
 
-class ImageProcessor:
+class ModelLoader:
     def __init__(self, model_type: str = "local"):
         """
         Initialize the image processor with specified model type.
@@ -206,37 +206,6 @@ def download_images(image_data: List[Dict[str, List[str]]], temp_dir: str) -> Li
     
     return downloaded_images
 
-# def organize_predictions_by_domain(predictions: List[Dict[str, Any]], downloaded_images: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
-#     """
-#     Organizes predictions by domain ID using the downloaded images data.
-    
-#     Args:
-#         predictions: List of dictionaries with structure {"file_path": str, "prediction": dict}
-#         downloaded_images: List of dictionaries from download_images function containing domain_id and local_path
-        
-#     Returns:
-#         Dictionary mapping domain IDs to lists of predictions:
-#         {
-#             "domain_id": [
-#                 {"file_path": str, "prediction": dict},
-#                 ...
-#             ]
-#         }
-#     """
-#     # Create a mapping of local_path to domain_id
-#     path_to_domain = {img["local_path"]: img["domain_id"] for img in downloaded_images}
-    
-#     # Initialize results dictionary
-#     domain_predictions = defaultdict(list)
-    
-#     # Organize predictions by domain
-#     for pred in predictions:
-#         file_path = pred["file_path"]
-#         if file_path in path_to_domain:
-#             domain_id = path_to_domain[file_path]
-#             domain_predictions[domain_id].append(pred)
-    
-#     return dict(domain_predictions)
 
 async def main():
     assert load_dotenv()
@@ -251,7 +220,7 @@ async def main():
     processor = ImageProcessor(model_type="hosted")
     image_paths = [img["local_path"] for img in downloaded_images]
     results = await processor.model.predict_batch(image_paths, categories=["hammer", "nail", "tape"])
-    print(results)
+
     return results
 
 if __name__ == "__main__":

@@ -1,3 +1,3 @@
-from .image_loader import ImageLoader
+from .loaders import ImageLoader, ModelLoader
 
-__all__ = ['ImageLoader']
+__all__ = ['ImageLoader', 'ModelLoader']
