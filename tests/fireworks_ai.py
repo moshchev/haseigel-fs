@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.core.response_validation import ImagePrompts , NoCategoriesSchema , create_dynamic_schema
 
 load_dotenv()
-model_qwen = 'fireworks_ai/accounts/fireworks/models/qwen2-vl-72b-instruct'
+model_qwen = 'fireworks_ai/accounts/fireworks/models/qwen2-vl-7b-instruct'
 img = 'data/images/temp/Wintergrillen 992x661.jpg.webp'
 
 
