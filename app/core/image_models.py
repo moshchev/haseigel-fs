@@ -3,20 +3,24 @@ from transformers import(
     MobileViTV2ForImageClassification, 
     AutoModelForCausalLM, 
     AutoTokenizer
-    )
+)
 
 from PIL import Image
 from openai import OpenAI
 import litellm
-
+import torch
 from dotenv import load_dotenv
+
 import os
 import json
 import asyncio
-import torch
 
 from app.utils import prepare_image
-from app.core.response_validation import create_dynamic_schema, ImagePrompts, NoCategoriesSchema
+from app.core.response_validation import (
+    create_dynamic_schema, 
+    ImagePrompts, 
+    NoCategoriesSchema
+)
 
 # Models that you can plug into litellm and directly use in the codebase
 # you can also add your own models here, they should be compatible with openai api standards
@@ -66,53 +70,6 @@ class MobileViTClassifier:
             "model": "mobilevit_v2"
         }
     
-    
-class OpenAIImageClassifier():
-    def __init__(self, model_name:str=LLMS['OPENAI']):
-        load_dotenv()
-        self._validate_environment()
-        self.client = OpenAI()
-        self.model_name = model_name
-
-    def _validate_environment(self) -> None:
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:  # This checks for None or empty string
-            raise EnvironmentError("OPENAI_API_KEY is not set or empty in the environment variables")
-
-    def _prepare_message(self, image_path:str, prompt:str) -> list[dict]:
-        base64_image = prepare_image(image_path)
-        message = [
-            {"role": "user", 
-            "content": [
-                {"type": "text", "text": prompt}, 
-                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-            ]
-            }
-        ]
-        return message
-    
-    def predict(self, image_path:str, categories:list[str]=None) -> dict:
-        if categories:
-            schema = create_dynamic_schema(categories)
-            prompt = ImagePrompts.DEFAULT_PROMPT
-        else:
-            schema = NoCategoriesSchema
-            prompt = ImagePrompts.NO_CATEGORIES_PROMPT
-
-        message = self._prepare_message(image_path, prompt)
-        response = self.client.beta.chat.completions.parse(
-            model=self.model_name,
-            messages=message,
-            response_format=schema
-        )
-        try:
-            response_content = response.choices[0].message.parsed
-            response_data = response_content.model_dump()
-            schema.model_validate(response_data)  # Validate the response against the schema
-        except Exception as e:
-            raise ValueError(f"Response validation failed: {e}")
-        
-        return response_data
     
 class VisionLanguageModelClassifier():
     def __init__(self, model_name:str=LLMS['FIREWORKS_QWEN']):
