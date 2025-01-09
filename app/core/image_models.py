@@ -19,9 +19,9 @@ from app.utils import prepare_image
 from app.core.response_validation import create_dynamic_schema, ImagePrompts, NoCategoriesSchema
 
 # Models that you can plug into litellm and directly use in the codebase
-# you can also add your own models here, they should be compatible with openai standards
+# you can also add your own models here, they should be compatible with openai api standards
 # I recommend using the sglang for serving your own models, and it will be compatible with litellm
-# https://docs.litellm.ai/docs/providers/openai_compatible  
+# https://docs.litellm.ai/docs/providers/openai_compatible
 
 LLMS = {
     'OPENAI': 'openai/gpt-4o-mini',
@@ -232,7 +232,7 @@ class MoondreamProcessor:
         # Parse the queries and results into a structured format
         return self.parse_query_result(queries, results)
 
-    async def process_batch(self, batch, queries, output_file="output.json"):
+    async def process_batch(self, batch, queries):
         """Processes a batch of images with encoding and queries asynchronously."""
 
         # Encode images asynchronously
@@ -249,10 +249,6 @@ class MoondreamProcessor:
 
         # Map results back to filenames
         final_results = {filename: result for filename, result in zip(tasks.keys(), results)}
-
-        # # Save results to a JSON file
-        # with open(output_file, "w") as f:
-        #     json.dump(final_results, f, indent=4)
 
         return final_results
 
