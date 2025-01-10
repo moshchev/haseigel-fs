@@ -11,22 +11,6 @@ Key features:
 - Parallel processing capabilities
 - Detailed JSON output format
 
-## How to Start the App
-
-1. **Install Dependencies**:
-   - Using `pip`:
-
-     ```sh
-     pip install -r requirements.txt
-     
-     ```
-
-2. **Run the Flask App**:
-
-   ```sh
-    python3 run.py
-   ```
-
 ## API Endpoints
 
 ### `/process-domains` (POST)
