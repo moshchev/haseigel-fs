@@ -1,56 +1,15 @@
-# Project Status & Next Steps
+# Web Content Analysis Tool
 
-## Current Challenges
+A Flask-based web application that processes HTML content from domains, extracts images, and performs image classification and analysis using vision-language models.
+The tool can process batches of domains in parallel, extract meaningful information from web pages, and provide detailed analysis of visual content using state-of-the-art AI models.
 
-### Moondream Multi-Query Limitations
+Key features:
 
-#### check my small report on the moondream performance [here](docs/moondream_performance.md)
-
-- Multiple categories cannot be processed simultaneously with Moondream, e.g. can you see a grill *AND* a hammer in the image?
-- Each category requires separate prompting -> indiviaual quert for each category -> 1. can you see a grill?  2. can you see a hammer?
-- Performance is RAM-dependent:
-  - you can send propmt individually for each category, but then you are capped by how many times you can start the process at the same time
-  - Native Moondream client shows better performance over HF:
-    - Query time: ~0.5 seconds per query
-    - Image processing: ~7 seconds per image
----
-- I didnt test the HF over multiple queries
-- I didnt test the asyinc processing of the queries (both native client and HF)
-- I didnt test on a gpu from HF
----
-### Alternative Approach
-
-- Consider using hosted LLM services (e.g., Fireworks)
-- Need to evaluate:
-  - Rate limiting for batch processing (1000+ images)
-  - Overall performance benefits
-  - Cost implications
-
-## Model Comparison
-
-### QWEN-72B
-
-#### Advantages:
-
-- Structured JSON output for easier parsing
-- Cost-effective (approximately 300 tokens per query with grill example)
-
-#### Limitations:
-
-- Quality concerns observed (didnt work with grill example, but mb prompt is ass)
-
-### Moondream-2B
-
-#### Advantages:
-
-- Better quality detection (successfully identified grill in test images)
-- More accurate classifications overall
-
-#### Implementation Needs:
-
-- Develop parsing strategy for unstructured responses
-- Create JSON construction logic from text responses
-- Implement yes/no answer detection
+- Batch processing of domain HTML content
+- Image extraction and classification
+- Vision-language model integration
+- Parallel processing capabilities
+- Detailed JSON output format
 
 ## How to Start the App
 
