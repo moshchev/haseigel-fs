@@ -1,16 +1,20 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from PIL import Image
 import time 
+import torch
 
 image = Image.open('/Users/christiannikolov/Downloads/HASE&IGEL/haseigel-fs/data/images/temp/Wintergrillen 992x661.jpg.webp')
+
+# Set device
+device = "cpu" if torch.backends.mps.is_available() else "cpu"
+print(f"Using device: {device}")
 
 model = AutoModelForCausalLM.from_pretrained(
     "vikhyatk/moondream2",
     revision="2025-01-09",
     trust_remote_code=True,
-    # Uncomment to run on GPU.
-    device_map={"": "mps"}
-)
+    device_map={"": device}
+).to(device)  # Ensure the entire model is on the correct device
 
 # Captioning
 start = time.time()
