@@ -45,41 +45,38 @@ from PIL import Image
 import time
 import torch
 
-def moondream_transformers():
-    start_time = time.time()
+# def moondream_transformers():
+#     start_time = time.time()
 
-    model_id = "vikhyatk/moondream2"
-    revision = "2024-08-26"
-    # Add device detection
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+#     model_id = "vikhyatk/moondream2"
+#     revision = "2025-01-09"
+#     # Add device detection
+#     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    model = AutoModelForCausalLM.from_pretrained(
-        model_id, trust_remote_code=True, revision=revision
-    ).to(device)  # Move model to GPU
-    tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
+#     model = AutoModelForCausalLM.from_pretrained(
+#         model_id, trust_remote_code=True, revision=revision
+#     ).to(device)  # Move model to GPU
+#     tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
 
-    model_load_end = time.time()
+#     model_load_end = time.time()
 
-    print(f"Using device: {device}")  # Print which device is being used
-    print(f"Model loaded in {model_load_end - start_time:.2f} seconds")
+#     print(f"Using device: {device}")  # Print which device is being used
+#     print(f"Model loaded in {model_load_end - start_time:.2f} seconds")
 
-    # Image processing time
-    image_process_start = time.time()
+#     # Image processing time
+#     image_process_start = time.time()
 
-    image = Image.open('data/images/temp/Wintergrillen 992x661.jpg.webp')
-    enc_image = model.encode_image(image)
-    image_process_end = time.time()
-    print(f"Image processed in {image_process_end - image_process_start:.2f} seconds")
+#     image = Image.open('data/images/temp/Wintergrillen 992x661.jpg.webp')
+#     enc_image = model.encode_image(image)
+#     image_process_end = time.time()
+#     print(f"Image processed in {image_process_end - image_process_start:.2f} seconds")
 
-    query_start = time.time()
-    answer = model.answer_question(enc_image, 'List all object classes detected in the image.', tokenizer)
-    query_end = time.time()
-    print(f"Query 1 answered in {query_end - query_start:.2f} seconds")
-    print(answer)
-    return answer 
+#     answer = model.answer_question(enc_image, 'what is the main class of the image. anwser in one word', tokenizer)
+#     print(answer)
 
-answer = moondream_transformers()
-print(answer)
+# moondream_transformers()
+
+
 
 
 # import nltk
