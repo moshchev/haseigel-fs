@@ -1,7 +1,7 @@
-from app.core.image_models import MobileViTClassifier, OpenAIImageClassifier, MoondreamProcessor
+from app.core.image_models import MobileViTClassifier, MoondreamProcessor, AsyncVisionLanguageModelClassifier
 
 MODEL_CLASSES = {
     'mobilevit_v2': MobileViTClassifier,
-    'openai': OpenAIImageClassifier,
     'moondream': MoondreamProcessor,
+    'vllm': AsyncVisionLanguageModelClassifier,
 }

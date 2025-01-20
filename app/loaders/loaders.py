@@ -2,6 +2,8 @@ from PIL import Image
 import os
 from concurrent.futures import ThreadPoolExecutor
 from app.core.image_models import MobileViTClassifier, AsyncVisionLanguageModelClassifier
+
+
 class ImageLoader:
     """
     1. Loads and preprocesses images from a folder to memory.
@@ -46,6 +48,7 @@ class ImageLoader:
             batch = self.image_data[i : i + batch_size]
             filenames, images = zip(*batch)  # Separate filenames and images
             yield filenames, images
+
 
 class ModelLoader:
     def __init__(self, model_type: str = "local"):

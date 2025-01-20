@@ -3,25 +3,29 @@ from transformers import(
     MobileViTV2ForImageClassification, 
     AutoModelForCausalLM, 
     AutoTokenizer
-    )
+)
 
 from PIL import Image
 from openai import OpenAI
 import litellm
-
+import torch
 from dotenv import load_dotenv
+
 import os
 import json
 import asyncio
-import torch
 
 from app.utils import prepare_image
-from app.core.response_validation import create_dynamic_schema, ImagePrompts, NoCategoriesSchema
+from app.core.response_validation import (
+    create_dynamic_schema, 
+    ImagePrompts, 
+    NoCategoriesSchema
+)
 
 # Models that you can plug into litellm and directly use in the codebase
-# you can also add your own models here, they should be compatible with openai standards
+# you can also add your own models here, they should be compatible with openai api standards
 # I recommend using the sglang for serving your own models, and it will be compatible with litellm
-# https://docs.litellm.ai/docs/providers/openai_compatible  
+# https://docs.litellm.ai/docs/providers/openai_compatible
 
 LLMS = {
     'OPENAI': 'openai/gpt-4o-mini',
@@ -66,53 +70,6 @@ class MobileViTClassifier:
             "model": "mobilevit_v2"
         }
     
-    
-class OpenAIImageClassifier():
-    def __init__(self, model_name:str=LLMS['OPENAI']):
-        load_dotenv()
-        self._validate_environment()
-        self.client = OpenAI()
-        self.model_name = model_name
-
-    def _validate_environment(self) -> None:
-        api_key = os.getenv('OPENAI_API_KEY')
-        if not api_key:  # This checks for None or empty string
-            raise EnvironmentError("OPENAI_API_KEY is not set or empty in the environment variables")
-
-    def _prepare_message(self, image_path:str, prompt:str) -> list[dict]:
-        base64_image = prepare_image(image_path)
-        message = [
-            {"role": "user", 
-            "content": [
-                {"type": "text", "text": prompt}, 
-                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
-            ]
-            }
-        ]
-        return message
-    
-    def predict(self, image_path:str, categories:list[str]=None) -> dict:
-        if categories:
-            schema = create_dynamic_schema(categories)
-            prompt = ImagePrompts.DEFAULT_PROMPT
-        else:
-            schema = NoCategoriesSchema
-            prompt = ImagePrompts.NO_CATEGORIES_PROMPT
-
-        message = self._prepare_message(image_path, prompt)
-        response = self.client.beta.chat.completions.parse(
-            model=self.model_name,
-            messages=message,
-            response_format=schema
-        )
-        try:
-            response_content = response.choices[0].message.parsed
-            response_data = response_content.model_dump()
-            schema.model_validate(response_data)  # Validate the response against the schema
-        except Exception as e:
-            raise ValueError(f"Response validation failed: {e}")
-        
-        return response_data
     
 class VisionLanguageModelClassifier():
     def __init__(self, model_name:str=LLMS['FIREWORKS_QWEN']):
@@ -232,7 +189,7 @@ class MoondreamProcessor:
         # Parse the queries and results into a structured format
         return self.parse_query_result(queries, results)
 
-    async def process_batch(self, batch, queries, output_file="output.json"):
+    async def process_batch(self, batch, queries):
         """Processes a batch of images with encoding and queries asynchronously."""
 
         # Encode images asynchronously
@@ -249,10 +206,6 @@ class MoondreamProcessor:
 
         # Map results back to filenames
         final_results = {filename: result for filename, result in zip(tasks.keys(), results)}
-
-        # # Save results to a JSON file
-        # with open(output_file, "w") as f:
-        #     json.dump(final_results, f, indent=4)
 
         return final_results
 
