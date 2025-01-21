@@ -126,6 +126,31 @@ class VisionLanguageModelClassifier():
     
 
 class MoondreamProcessor:
+    """
+    A processor class for the Moondream vision-language model that handles image encoding
+    and question answering tasks.
+
+    Methods:
+        encode_image_async(image: PIL.Image) -> torch.Tensor:
+            Asynchronously encodes a single image into embeddings.
+        
+        encode_images_in_batch(batch: tuple[list[str], list[PIL.Image]]) -> dict:
+            Asynchronously encodes multiple images in a batch.
+            Returns dict mapping filenames to encoded images.
+        
+        _parse_query_result(queries: list[str], results: list[str]) -> dict:
+            Parses model responses into structured results.
+            Returns dict mapping categories to yes/no answers.
+            
+        process_batch(batch: tuple[list[str], list[PIL.Image]], queries: list[str]) -> dict:
+            Processes a batch of images with encoding and queries asynchronously.
+            Returns dict mapping filenames to query results.
+        
+        process_single_image(image: PIL.Image, queries: list[str]) -> dict:
+            Processes a single image with encoding and queries asynchronously.
+            Returns dict containing query results for the image.
+    """
+    
     def __init__(self, model_id="vikhyatk/moondream2", revision="2024-08-26"):
         """Initialize the model once and load it into memory."""
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -142,7 +167,7 @@ class MoondreamProcessor:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.model.encode_image, image)
 
-    async def encode_images(self, batch):
+    async def encode_images_in_batch(self, batch):
         """Encodes a batch of images asynchronously."""
         
         # Unpack the batch tuple correctly
@@ -155,7 +180,7 @@ class MoondreamProcessor:
         # Return a dictionary mapping filenames to encoded images
         return {filename: enc_img for filename, enc_img in zip(tasks.keys(), encoded_images)}
     
-    def parse_query_result(self, queries, results):
+    def _parse_query_result(self, queries, results):
         """Parse query strings and model responses into a structured dictionary."""
         parsed_results = {}
         for query, result in zip(queries, results):
@@ -187,13 +212,19 @@ class MoondreamProcessor:
         results = await asyncio.gather(*tasks)
         
         # Parse the queries and results into a structured format
-        return self.parse_query_result(queries, results)
+        return self._parse_query_result(queries, results)
 
-    async def process_batch(self, batch, queries):
+    async def process_batch(self, batch, categories):
         """Processes a batch of images with encoding and queries asynchronously."""
 
+        if categories:
+            queries = ImagePrompts.get_categorized_prompt(categories)
+        else:
+            queries = None
+        
+        
         # Encode images asynchronously
-        encoded_images = await self.encode_images(batch)
+        encoded_images = await self.encode_images_in_batch(batch)
 
         # Prepare async tasks for querying
         tasks = {
@@ -208,6 +239,27 @@ class MoondreamProcessor:
         final_results = {filename: result for filename, result in zip(tasks.keys(), results)}
 
         return final_results
+
+
+    async def process_single_image(self, image, queries):
+        """
+        Process a single image with encoding and queries asynchronously.
+        
+        Args:
+            image_data: Tuple of (image_path, PIL.Image)
+            queries: List of query strings to run on the image
+            
+        Returns:
+            Dict containing query results for the image
+        """
+        # Encode single image
+        encoded = await self.encode_image_async(image)
+        
+        # Run queries on the encoded image
+        results = await self.ask_questions(encoded, queries)
+        
+        return results
+    
 
 class AsyncVisionLanguageModelClassifier():
     def __init__(self, model_name: str = LLMS['FIREWORKS_QWEN']):
@@ -269,7 +321,7 @@ class AsyncVisionLanguageModelClassifier():
         if categories:
             prompt = ImagePrompts.get_categorized_prompt(categories)
         else:
-            prompt = "<INSERT YOUR DEFAULT PROMPT HERE>"
+            prompt = ImagePrompts.NO_CATEGORIES_PROMPT
 
         messages = await self._prepare_message(image_path, prompt)
 

@@ -1,7 +1,7 @@
 from PIL import Image
 import os
 from concurrent.futures import ThreadPoolExecutor
-from app.core.image_models import MobileViTClassifier, AsyncVisionLanguageModelClassifier
+from app.core.image_models import AsyncVisionLanguageModelClassifier, MoondreamProcessor
 
 
 class ImageLoader:
@@ -63,7 +63,7 @@ class ModelLoader:
         
     def _initialize_model(self):
         if self.model_type == "local":
-            return MobileViTClassifier()
+            return MoondreamProcessor()
         elif self.model_type == "hosted":
             return AsyncVisionLanguageModelClassifier()
         else:
