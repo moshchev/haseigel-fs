@@ -64,7 +64,7 @@ def create_dynamic_schema(categories: list[str]):
 class MoondreamPrompts:
     @classmethod
     def get_categorized_prompt(cls, categories: list[str]) -> str:
-        base = "Is there a object in the image that is related to the following category: {cat}"
+        base = "Is there a object in the image that is related to the following category: {cat}. Answer yes or no."
         return [base.format(cat=cat) for cat in categories]
     
     @classmethod
