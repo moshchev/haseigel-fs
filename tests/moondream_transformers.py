@@ -45,39 +45,37 @@ from PIL import Image
 import time
 import torch
 
-# def moondream_transformers():
-#     start_time = time.time()
+def moondream_transformers():
+    start_time = time.time()
 
-#     model_id = "vikhyatk/moondream2"
-#     revision = "2025-01-09"
-#     # Add device detection
-#     device = "cuda" if torch.cuda.is_available() else "cpu"
+    model_id = "vikhyatk/moondream2"
+    revision = "2024-08-26"
+    # Add device detection
+    device = "cuda" if torch.cuda.is_available() else "cpu"
 
-#     model = AutoModelForCausalLM.from_pretrained(
-#         model_id, trust_remote_code=True, revision=revision
-#     ).to(device)  # Move model to GPU
-#     tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id, trust_remote_code=True, revision=revision
+    ).to(device)  # Move model to GPU
+    tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
 
-#     model_load_end = time.time()
+    model_load_end = time.time()
 
-#     print(f"Using device: {device}")  # Print which device is being used
-#     print(f"Model loaded in {model_load_end - start_time:.2f} seconds")
+    print(f"Using device: {device}")  # Print which device is being used
+    print(f"Model loaded in {model_load_end - start_time:.2f} seconds")
 
-#     # Image processing time
-#     image_process_start = time.time()
+    # Image processing time
+    image_process_start = time.time()
 
-#     image = Image.open('data/images/temp/Wintergrillen 992x661.jpg.webp')
-#     enc_image = model.encode_image(image)
-#     image_process_end = time.time()
-#     print(f"Image processed in {image_process_end - image_process_start:.2f} seconds")
+    image = Image.open('data/images/temp/Wintergrillen 992x661.jpg.webp')
+    enc_image = model.encode_image(image)
+    image_process_end = time.time()
+    print(f"Image processed in {image_process_end - image_process_start:.2f} seconds")
 
-#     answer = model.answer_question(enc_image, 'what is the main class of the image. anwser in one word', tokenizer)
-#     print(answer)
+    answer = model.answer_question(enc_image, 'Is there a object in the image that is related to the following category: grill. Answer yes or no', tokenizer)
+    print(answer)
+    return answer
 
-# moondream_transformers()
-
-
-
+answer = moondream_transformers()
 
 # import nltk
 # from nltk import word_tokenize, pos_tag, RegexpParser
@@ -103,7 +101,7 @@ import torch
 # # Extract noun phrases from the parse tree
 # class_list = []
 # for subtree in tree.subtrees(filter=lambda t: t.label() == 'NP'):
-#     phrase = " ".join(word for word, tag in subtree.leaves())
+#     phrase = " ".join(word for word, _ in subtree.leaves())
 #     class_list.append(phrase.lower())  # Normalize to lowercase
 
 # # Remove duplicates
