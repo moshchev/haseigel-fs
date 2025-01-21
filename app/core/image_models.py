@@ -128,27 +128,8 @@ class MoondreamProcessor:
     """
     A processor class for the Moondream vision-language model that handles image encoding
     and question answering tasks.
-
-    Methods:
-        encode_image_async(image: PIL.Image) -> torch.Tensor:
-            Asynchronously encodes a single image into embeddings.
-        
-        encode_images_in_batch(batch: tuple[list[str], list[PIL.Image]]) -> dict:
-            Asynchronously encodes multiple images in a batch.
-            Returns dict mapping filenames to encoded images.
-        
-        _parse_query_result(queries: list[str], results: list[str]) -> dict:
-            Parses model responses into structured results.
-            Returns dict mapping categories to yes/no answers.
-            
-        process_batch(batch: tuple[list[str], list[PIL.Image]], queries: list[str]) -> dict:
-            Processes a batch of images with encoding and queries asynchronously.
-            Returns dict mapping filenames to query results.
-        
-        process_single_image(image: PIL.Image, queries: list[str]) -> dict:
-            Processes a single image with encoding and queries asynchronously.
-            Returns dict containing query results for the image.
     """
+    
     def __init__(self, model_id="vikhyatk/moondream2", revision="2024-08-26"):
         """Initialize the model once and load it into memory."""
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
