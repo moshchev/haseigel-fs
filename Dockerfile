@@ -24,7 +24,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Set up NLTK data
-RUN python3 -m nltk.downloader punkt averaged_perceptron_tagger
+RUN python3 -m nltk.downloader punkt averaged_perceptron_tagger averaged_perceptron_tagger_eng
 
 # Create necessary directories
 RUN mkdir -p ready_for_llm/output data/images/temp
