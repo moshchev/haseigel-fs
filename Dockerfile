@@ -23,7 +23,9 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Set default command
-CMD ["python3", "run.py"] 
+# Create scripts directory and copy startup script
+COPY scripts/startup.sh /app/scripts/
+RUN chmod +x /app/scripts/startup.sh
 
-CMD ["python3", "setup_nltk.py"]
+# Set default command
+CMD ["/app/scripts/startup.sh"]
