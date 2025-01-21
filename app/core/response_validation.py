@@ -60,3 +60,14 @@ def create_dynamic_schema(categories: list[str]):
     }
     fields['custom_category'] = (Optional[str], str)
     return create_model("DynamicImageSchema", **fields)
+
+class MoondreamPrompts:
+    @classmethod
+    def get_categorized_prompt(cls, categories: list[str]) -> str:
+        base = "Is there a object in the image that is related to the following category: {cat}"
+        return [base.format(cat=cat) for cat in categories]
+    
+    @classmethod
+    def get_no_categories_prompt(cls) -> str:
+        return "List all object classes detected in the image. Just list the classes, no other text."
+    
