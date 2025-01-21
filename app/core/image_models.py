@@ -6,7 +6,6 @@ from transformers import(
 )
 
 from PIL import Image
-from openai import OpenAI
 import litellm
 import torch
 from dotenv import load_dotenv
@@ -17,9 +16,9 @@ import asyncio
 
 from app.utils import prepare_image
 from app.core.response_validation import (
-    create_dynamic_schema, 
-    ImagePrompts, 
-    NoCategoriesSchema
+    ImagePrompts,
+    MoondreamPrompts,
+    get_classes_with_nltk
 )
 
 # Models that you can plug into litellm and directly use in the codebase
@@ -150,7 +149,6 @@ class MoondreamProcessor:
             Processes a single image with encoding and queries asynchronously.
             Returns dict containing query results for the image.
     """
-    
     def __init__(self, model_id="vikhyatk/moondream2", revision="2024-08-26"):
         """Initialize the model once and load it into memory."""
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -162,17 +160,26 @@ class MoondreamProcessor:
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
 
-    async def encode_image_async(self, image):
+
+    async def _encode_image_async(self, image):
         """Encodes a single image asynchronously."""
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self.model.encode_image, image)
 
-    async def encode_images_in_batch(self, batch):
+
+    def _build_queries(self, categories):
+        if categories:
+            return MoondreamPrompts.get_categorized_prompt(categories)
+        else:
+            return MoondreamPrompts.get_no_categories_prompt()
+
+
+    async def _encode_images_in_batch(self, batch):
         """Encodes a batch of images asynchronously."""
         
         # Unpack the batch tuple correctly
         filenames, images = batch
-        tasks = {filename: self.encode_image_async(image) 
+        tasks = {filename: self._encode_image_async(image) 
                 for filename, image in zip(filenames, images)}
         
         encoded_images = await asyncio.gather(*tasks.values())
@@ -180,29 +187,25 @@ class MoondreamProcessor:
         # Return a dictionary mapping filenames to encoded images
         return {filename: enc_img for filename, enc_img in zip(tasks.keys(), encoded_images)}
     
-    def _parse_query_result(self, queries, results):
-        """Parse query strings and model responses into a structured dictionary."""
-        parsed_results = {}
-        for query, result in zip(queries, results):
-            # Handle both "is there a" and "is there an"
-            if "is there a " in query:
-                category = query.split("is there a ")[1].split(" in this image")[0]
-            elif "is there an " in query:
-                category = query.split("is there an ")[1].split(" in this image")[0]
-            else:
-                category = "unknown"  # Fallback for unexpected query formats
-
-            # Normalize and clean the result
-            answer = result.strip().lower()  # Convert to lowercase
-            if "yes" in answer:
-                parsed_results[category] = "yes"
-            elif "no" in answer:
-                parsed_results[category] = "no"
-            else:
-                parsed_results[category] = "unknown"  # Handle unexpected responses
-        return parsed_results
     
-    async def ask_questions(self, enc_image, queries):
+    def _parse_query_result(self, categories, results):
+        parsed_results = {}
+        
+        if categories:
+            for cat_id, category in enumerate(categories):
+                result = results[cat_id].lower()
+                parsed_results[category] = True if 'yes' in result else False        
+        else:
+            classes = get_classes_with_nltk(results)
+            parsed_results = {'custom_category': classes}
+
+        return parsed_results
+
+    
+    async def ask_questions(self, enc_image, categories):
+        
+        queries = self._build_queries(categories)
+        
         """Runs multiple queries on a single image asynchronously."""
         loop = asyncio.get_running_loop()
         tasks = [
@@ -212,23 +215,18 @@ class MoondreamProcessor:
         results = await asyncio.gather(*tasks)
         
         # Parse the queries and results into a structured format
-        return self._parse_query_result(queries, results)
+        return self._parse_query_result(categories, results)
+        # return results
+
 
     async def process_batch(self, batch, categories):
-        """Processes a batch of images with encoding and queries asynchronously."""
-
-        if categories:
-            queries = ImagePrompts.get_categorized_prompt(categories)
-        else:
-            queries = None
-        
-        
+        """Processes a batch of images with encoding and queries asynchronously."""        
         # Encode images asynchronously
-        encoded_images = await self.encode_images_in_batch(batch)
+        encoded_images = await self._encode_images_in_batch(batch)
 
         # Prepare async tasks for querying
         tasks = {
-            filename: self.ask_questions(enc_image, queries)
+            filename: self.ask_questions(enc_image, categories)
             for filename, enc_image in encoded_images.items()
         }
 
@@ -241,7 +239,7 @@ class MoondreamProcessor:
         return final_results
 
 
-    async def process_single_image(self, image, queries):
+    async def process_single_image(self, image, categories):
         """
         Process a single image with encoding and queries asynchronously.
         
@@ -253,10 +251,9 @@ class MoondreamProcessor:
             Dict containing query results for the image
         """
         # Encode single image
-        encoded = await self.encode_image_async(image)
-        
+        encoded = await self._encode_image_async(image)
         # Run queries on the encoded image
-        results = await self.ask_questions(encoded, queries)
+        results = await self.ask_questions(encoded, categories)
         
         return results
     

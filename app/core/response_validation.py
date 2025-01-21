@@ -1,5 +1,6 @@
 from pydantic import Field, create_model, BaseModel
 from typing import Optional
+from nltk import word_tokenize, pos_tag, RegexpParser
 
 # Image Prompts
 class ImagePrompts:
@@ -61,6 +62,7 @@ def create_dynamic_schema(categories: list[str]):
     fields['custom_category'] = (Optional[str], str)
     return create_model("DynamicImageSchema", **fields)
 
+
 class MoondreamPrompts:
     @classmethod
     def get_categorized_prompt(cls, categories: list[str]) -> str:
@@ -69,5 +71,39 @@ class MoondreamPrompts:
     
     @classmethod
     def get_no_categories_prompt(cls) -> str:
-        return "List all object classes detected in the image. Just list the classes, no other text."
+        return ["List all object classes detected in the image. Just list the classes, no other text."]
     
+    
+def get_classes_with_nltk(results:list[str]) -> list[str]:
+    """
+    Extracts noun phrases from a text using NLTK.
+    """
+    answer = " ".join(results)
+    
+    # Tokenize and POS tag the text
+    tokens = word_tokenize(answer)
+    pos_tags = pos_tag(tokens)
+
+    # Define a grammar for noun phrases (NP)
+    grammar = r"""
+        NP: {<DT|PP\$>?<JJ>*<NN>+}   # Determiner/possessive, adjectives, and noun(s)
+            {<NNP>+}                 # Proper noun(s)
+    """
+
+    # Create a chunk parser and parse the POS-tagged tokens
+    chunk_parser = RegexpParser(grammar)
+    tree = chunk_parser.parse(pos_tags)
+
+    # Extract noun phrases from the parse tree
+    class_list = []
+    for subtree in tree.subtrees(filter=lambda t: t.label() == 'NP'):
+        phrase = " ".join(word for word, _ in subtree.leaves())
+        class_list.append(phrase.lower())  # Normalize to lowercase
+
+    # Remove duplicates
+    unique_classes = list(set(class_list))
+
+    # Remove articles (a, an, the) from the beginning of phrases
+    cleaned_classes = [cls.split(" ", 1)[1] if cls.split(" ", 1)[0] in {"a", "an", "the"} else cls for cls in unique_classes]
+
+    return cleaned_classes
