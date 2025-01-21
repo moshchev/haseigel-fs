@@ -5,6 +5,7 @@ def download_nltk_dependencies():
         'punkt',
         'averaged_perceptron_tagger',
         'averaged_perceptron_tagger_eng'
+        
     ]
     
     for package in required_packages:
