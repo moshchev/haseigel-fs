@@ -26,8 +26,5 @@ COPY . .
 # Set up NLTK data
 RUN python3 -m nltk.downloader punkt averaged_perceptron_tagger averaged_perceptron_tagger_eng
 
-# Create necessary directories
-RUN mkdir -p ready_for_llm/output data/images/temp
-
 # Set default command
 CMD ["python3", "run.py"] 
