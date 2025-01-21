@@ -23,8 +23,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Set up NLTK data
-RUN python3 -m nltk.downloader punkt averaged_perceptron_tagger averaged_perceptron_tagger_eng
-
 # Set default command
 CMD ["python3", "run.py"] 
+
+CMD ["python3", "setup_nltk.py"]
