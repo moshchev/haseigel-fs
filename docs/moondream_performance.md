@@ -62,7 +62,7 @@ This document compares the performance of Moondream2B model using two different 
 
 - Native client is faster overall, with better image processing performance
 - Native client supports CPU only -> hf is faster with GPU
-- HF doesnt takes shit ton of time to process individual queries, where native client takes 0.48-0.55 seconds per query (kinda ridiculous, I will double check if this is correct)
-
+- HF doesnt takes shit ton of time to process individual queries, where native client takes 0.48-0.55 seconds per query
 - GPU is almost twice as fast as best CPU implementation (on 3 queries)
-    - Also the model will loaded in the app, so this time will be eliminated in the future. The GPU will take ~ 3 seconds to encode the image *and* answer 3 queries
+    - Also the model will loaded in the app, so this time will be eliminated in the future. The GPU will take ~ 3 seconds to encode the image *and* answer 3 queries. 
+    - In batches of 2 it will take ~ 1.5 seconds/image

@@ -50,7 +50,7 @@ class ImageLoader:
             yield filenames, images
 
 
-class ModelLoader:
+class ModelLoader: # this should've been a switch for the model type where you can pass the model type as a parameter to an endpoint. you can have it as inspiration
     def __init__(self, model_type: str = "local"):
         """
         Initialize the image processor with specified model type.

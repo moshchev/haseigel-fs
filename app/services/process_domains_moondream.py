@@ -1,7 +1,10 @@
 import asyncio
 
+from app.services.extract_images import collect_image_data, download_images
 from app.core.image_models import MoondreamProcessor
 from app.loaders import ImageLoader
+
+from app.config import TEMP_IMAGE_DIR
 
 import time
 # Producer: Loads image batches and sends them to the queue
@@ -37,21 +40,21 @@ async def process_domains_moondream(image_loader, moondream_processor, categorie
     # Wait until both are done
     await asyncio.gather(prod_task, cons_task)
 
-if __name__ == "__main__":
-    start_time = time.time()
-    # Your existing setup
-    image_loader = ImageLoader(folder_path="data/images/test_set", target_size=(512, 512), max_workers=8)
+
+def process_domains_moondream_service(data, categories):
+    """
+    data: List[Dict[str, Any]]
+    categories: List[str]
+    """
+    # Collect and download images
+    image_data = collect_image_data(data)
+    download_images(image_data, TEMP_IMAGE_DIR)
+    
+    # Initialize image loader and processor
+    image_loader = ImageLoader(folder_path=TEMP_IMAGE_DIR, target_size=(512, 512), max_workers=8)
     moondream = MoondreamProcessor()
-    categories = [
-       "giraffe", 
-       "elephant", 
-       "lion"
-    ]
 
     # Launch the async pipeline
     results = asyncio.run(process_domains_moondream(image_loader, moondream, categories, batch_size=2))
-    end_time = time.time()
-    print(f"Time taken: {end_time - start_time} seconds") 
 
-    with open('results.txt', 'w') as f:
-        f.write(str(results))
+    return results

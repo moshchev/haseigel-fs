@@ -1,3 +1,3 @@
-from .image_models import MobileViTClassifier, VisionLanguageModelClassifier, MoondreamProcessor
+from .image_models import MobileViTClassifier, AsyncVisionLanguageModelClassifier, MoondreamProcessor
 
-__all__ = ["MobileViTClassifier", "VisionLanguageModelClassifier", "MoondreamProcessor"]
+__all__ = ["MobileViTClassifier", "AsyncVisionLanguageModelClassifier", "MoondreamProcessor"]

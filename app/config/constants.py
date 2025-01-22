@@ -14,3 +14,5 @@ ERROR_MESSAGES = {
 # Default Processing Options
 DEFAULT_OUTPUT_TYPE = 'detailed'
 DEFAULT_DB_LIMIT = 250
+
+# there is some stuff in the code that is hardcoded, you can add it here (as inspiration)

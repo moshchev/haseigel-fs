@@ -1,3 +1,5 @@
+## Small test set on clean images of animals
+
 import os
 import requests
 from duckduckgo_search import DDGS

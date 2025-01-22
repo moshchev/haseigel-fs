@@ -3,6 +3,7 @@ from app.services.processing_functions import process_domains, process_html
 from app.services.single_image_classification import classify_image
 from app.core.image_models import MobileViTClassifier
 from app.config import ERROR_MESSAGES, DEFAULT_OUTPUT_TYPE
+from app.services.process_domains_moondream import process_domains_moondream_service
 
 # Create blueprint
 api = Blueprint('api', __name__)
@@ -64,4 +65,16 @@ def process_html_endpoint():
         result = process_html(html, base_url, model)
         return jsonify(result), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 400 
+        return jsonify({'error': str(e)}), 400
+    
+
+@api.route('/process-domains-moondream', methods=['POST'])
+def process_domains_moondream_endpoint():
+    try:
+        data = request.json
+        categories = data.get('categories')
+        result = process_domains_moondream_service(data, categories)
+        
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400

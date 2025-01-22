@@ -8,9 +8,7 @@ from transformers import(
 from PIL import Image
 import litellm
 import torch
-from dotenv import load_dotenv
 
-import os
 import json
 import asyncio
 
@@ -22,9 +20,15 @@ from app.core.response_validation import (
 )
 
 # Models that you can plug into litellm and directly use in the codebase
-# you can also add your own models here, they should be compatible with openai api standards
+# You can pick any provider that is supported by litellm, and it will be compatible with litellm
+# https://docs.litellm.ai/docs/providers
+
+# You can also add your own models here, they should be compatible with openai api standards
 # I recommend using the sglang for serving your own models, and it will be compatible with litellm
 # https://docs.litellm.ai/docs/providers/openai_compatible
+
+# Just add the right path to the model in this dict and then you can pass it to the model down below 
+# @AsyncVisionLanguageModelClassifier
 
 LLMS = {
     'OPENAI': 'openai/gpt-4o-mini',
@@ -69,65 +73,12 @@ class MobileViTClassifier:
             "model": "mobilevit_v2"
         }
     
-    
-class VisionLanguageModelClassifier():
-    def __init__(self, model_name:str=LLMS['FIREWORKS_QWEN']):
-        self.model_name = model_name
-        self.system_prompt = ImagePrompts.DEFAULT_PROMPT
-    
-    @staticmethod
-    def clean_llm_output(text):
-        # Remove markdown indicators
-        text = text.replace('```json', '').replace('```', '')
-        
-        # Remove newlines and extra spaces
-        text = text.replace('\n', '').replace('  ', '')
-        
-        return json.loads(text)
-    
-    def _prepare_message(self, image_path:str, prompt:str) -> list[dict]:
-        base64_image = prepare_image(image_path)
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": prompt
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url":f"data:image/jpeg;base64,{base64_image}"
-                        }
-                    }
-                ]
-            }
-        ]
-        return messages
-    
-    def predict(self, image_path:str, categories:list[str]=None) -> dict:
-        if categories:
-            prompt = ImagePrompts.get_categorized_prompt(categories)
-        else:
-            pass
-            # Write new prompt
-
-        messages = self._prepare_message(image_path, prompt)
-
-        response = litellm.completion(
-            model=self.model_name, 
-            messages=messages,
-        )
-
-        # return self.clean_llm_output(response.choices[0].message.content)
-        return response.choices[0].message.content
-    
 
 class MoondreamProcessor:
     """
     A processor class for the Moondream vision-language model that handles image encoding
     and question answering tasks.
+    
     """
     
     def __init__(self, model_id="vikhyatk/moondream2", revision="2024-08-26"):
@@ -225,11 +176,11 @@ class MoondreamProcessor:
         Process a single image with encoding and queries asynchronously.
         
         Args:
-            image_data: Tuple of (image_path, PIL.Image)
-            queries: List of query strings to run on the image
+            image_data: PIL.Image
+            categories: List of categories to run the queries on
             
         Returns:
-            Dict containing query results for the image
+            Dict containing the results of the queries for the image
         """
         # Encode single image
         encoded = await self._encode_image_async(image)
@@ -240,7 +191,7 @@ class MoondreamProcessor:
     
 
 class AsyncVisionLanguageModelClassifier():
-    def __init__(self, model_name: str = LLMS['FIREWORKS_QWEN']):
+    def __init__(self, model_name: str = LLMS['FIREWORKS_QWEN']): # add the models to the dict in this file and then you can pass them here to the model also you can add this parameter to the process single image endpoint and also provide path to the model (as inspiration)
         self.model_name = model_name
         self.system_prompt = ImagePrompts.DEFAULT_PROMPT
 
@@ -248,7 +199,7 @@ class AsyncVisionLanguageModelClassifier():
     def clean_llm_output(text):
         text = text.replace('```json', '').replace('```', '')
         text = text.replace('\n', '').replace('  ', '')
-        return json.loads(text)
+        return json.loads(text) # you should obiously catch the erros here. Otherwise first broken json will break the whole pipeline
 
     async def _prepare_message(self, image_path:str, prompt:str) -> list[dict]:
         base64_image = prepare_image(image_path)

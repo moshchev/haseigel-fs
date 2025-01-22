@@ -75,7 +75,8 @@ def get_html_data_as_json(engine, limit=15):
                 "response_text": row['response_text']
             }
             for _, row in grouped.iterrows()
-        ]
+        ],
+        "categories": input("Enter categories or click enter to skip: ")
     }
     
     return result

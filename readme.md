@@ -92,8 +92,9 @@ haseigel-fs/
 ```
 
 ### Important Files & Directories
-- `app/`: Main application logic (API routes, configs, model code, services).
-- `data/`: Store downloaded images (under images/temp).
+
+- `app/`: Main application logic (API routes, configs, model code, services, data folder).
+- `data/`: Stores test images (under images/temp).
 - `docs/`: Documentation or notes (for example, performance notes on Moondream).
 - `playground/`: A "lab" folder for personal tests, sample scripts, or experimental code.
 - `Dockerfile` & `docker-compose.yml`: Docker setup to containerize the application.
@@ -105,13 +106,15 @@ haseigel-fs/
 If you prefer running everything locally without Docker:
 
 1. **Clone the Repository**
+
 ```bash
-git clone <REPO_URL>  # your company repo link
+git clone https://github.com/moshchev/haseigel-fs.git  # your company repo link
 cd haseigel-fs
 ```
 
 2. **Create and Activate a Virtual Environment**
 ```bash
+
 python3 -m venv venv
 source venv/bin/activate       # macOS/Linux
 # or
@@ -119,6 +122,7 @@ venv\Scripts\activate          # Windows
 ```
 
 3. **Install Dependencies**
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -136,38 +140,49 @@ python setup_nltk.py
 If you want a Docker-based setup, we provide both a Dockerfile and a docker-compose.yml.
 
 ### Prerequisites:
+
 - Docker installed and running
 - (Optional) Docker Compose for multi-container orchestration
 
 ### Build and Run with Docker:
 
 #### a. Using plain Docker
+
 ```bash
 # Build the image
 docker build -t haseundigel-app .
 
-# Run the container
+# Run the container witout gpu support
 docker run --rm -p 5000:5000 haseundigel-app
+
+# Run the container with gpu support
+docker run --gpus all --rm -p 5000:5000 haseundigel-app
 ```
 
 This will:
+
 - Install system dependencies (Python 3.10, etc.).
 - Install Python packages from requirements.txt.
 - Expose Flask on port 5000.
 
 #### b. Using Docker Compose
+
 ```bash
 docker-compose up --build
 ```
 
 ### GPU / NVIDIA Support:
+
 - The provided Dockerfile uses nvidia/cuda:12.3.1-runtime-ubuntu22.04.
 - The docker-compose.yml includes reservations for GPU capabilities.
 - Make sure you have the NVIDIA Container Toolkit installed for GPU support.
 
 ### Confirm:
+
 Once the container is running, open http://localhost:5000/health. You should get:
+
 ```json
+
 {"status": "ok"}
 ```
 
@@ -181,6 +196,8 @@ Common environment variables include:
 - **Database** (if you want to store/fetch HTML from Postgres):
   - `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `DB_PORT`.
 - Additional keys or tokens for Fireworks AI models, etc.
+
+https://docs.litellm.ai/docs/providers - you can find all the providers that are currently supported by litellm, so you can configure your .env file to use the provider you want.
 
 Example `.env`:
 ```env
@@ -198,14 +215,6 @@ DB_PORT=5432
 
 After installing dependencies and setting environment variables:
 
-```bash
-# Optionally set FLASK_APP (for older Flask versions)
-export FLASK_APP=app
-
-# Then run
-flask run
-```
-
 Or simply:
 ```bash
 python run.py
@@ -213,18 +222,16 @@ python run.py
 
 ### 2. Via Docker / Docker Compose
 
-- **Plain Docker:**
 ```bash
+# Build the image
 docker build -t haseundigel-app .
+
+# Run the container witout gpu support
 docker run --rm -p 5000:5000 haseundigel-app
-```
 
-- **Docker Compose:**
-```bash
-docker-compose up --build
+# Run the container with gpu support
+docker run --gpus all --rm -p 5000:5000 haseundigel-app
 ```
-
-Then visit http://127.0.0.1:5000/health to confirm.
 
 ## Usage & API Endpoints
 
@@ -234,7 +241,7 @@ Returns `{ "status": "ok" }` if the server is running.
 
 ### 2. Image Classification
 `POST /model/<model_name>`
-- `<model_name>` can be one of: mobilevit_v2, moondream, vllm
+- `<model_name>` can be one of: mobilevit_v2, moondream, any model that is supported by litellm
 - Send an image file as form-data (key="image").
 
 Example:
@@ -258,6 +265,10 @@ curl -X POST -F "image=@/path/to/image.jpg" \
 }
 ```
 
+we have a tool in utils that fetches the data from the database and prepares it to the right format
+app.utils.data_tool.py - get_html_data_as_json()
+
+
 ### 4. Process Single HTML
 `POST /process-html`
 ```json
@@ -266,17 +277,6 @@ curl -X POST -F "image=@/path/to/image.jpg" \
   "response_url": "http://example.com"
 }
 ```
-
-## Additional Directories
-
-### 1. data/
-- Contains subfolders like images/temp for downloaded images.
-
-### 2. docs/
-- Currently holds moondream_performance.md with benchmarks.
-
-### 3. playground/
-- Various test and experimentation scripts.
 
 ## Workflow Summary
 1. Receive HTML data via POST /process-domains or POST /process-html.
@@ -287,9 +287,6 @@ curl -X POST -F "image=@/path/to/image.jpg" \
 
 ## Additional Notes
 
-### Database Integration (optional):
-- In app/utils/data_tool.py, you'll find methods for PostgreSQL integration.
-
 ### Extending the Project:
 - To add new classification models, create a new class in app/core/image_models.py
 - For new endpoints, add them in app/api/routes.py or create a new blueprint.
@@ -299,5 +296,4 @@ curl -X POST -F "image=@/path/to/image.jpg" \
 
 ### GPU Acceleration:
 - Dockerfile is based on nvidia/cuda:12.3.1-runtime-ubuntu22.04.
-- Make sure you have installed the NVIDIA container toolkit for GPU usage.
-
+- Make sure you have installed the NVIDIA container toolkit for GPU usage. Pass the --gpus all flag to the docker run command.
