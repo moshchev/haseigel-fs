@@ -71,9 +71,10 @@ def process_html_endpoint():
 @api.route('/process-domains-moondream', methods=['POST'])
 def process_domains_moondream_endpoint():
     try:
-        data = request.json
-        categories = data.get('categories')
-        result = process_domains_moondream_service(data, categories)
+        input_data = request.json
+        categories = input_data.get('categories')
+        html = input_data.get('data')
+        result = process_domains_moondream_service(html, categories)
         
         return jsonify(result), 200
     except Exception as e:
