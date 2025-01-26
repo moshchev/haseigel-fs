@@ -112,7 +112,16 @@ def process_domains_moondream_service(data, categories):
     image_loader = ImageLoader(folder_path=TEMP_IMAGE_DIR, target_size=(512, 512), max_workers=8)
     moondream = MoondreamProcessor()
 
+    # Get or create event loop
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
     # Launch the async pipeline
-    results = asyncio.run(process_domains_moondream(image_loader, moondream, categories, batch_size=2))
-
+    results = loop.run_until_complete(
+        process_domains_moondream(image_loader, moondream, categories, batch_size=2)
+    )
+    
     return results
