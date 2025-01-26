@@ -17,7 +17,15 @@ def classify_image(image_file, model_name: str):
     # Get the appropriate model
     model = get_model(model_name)
     
-    # Perform classification
-    result = model.predict(image_file)
-    
-    return result
+    # Handle Moondream model differently
+    if model_name == "moondream":
+        from PIL import Image
+        import asyncio
+        image = Image.open(image_file).convert("RGB")
+        # Run async process_single_image in event loop
+        result = asyncio.run(model.process_single_image(image, categories=None))
+        return result
+    else:
+        # For other models, use predict method
+        result = model.predict(image_file)
+        return result
