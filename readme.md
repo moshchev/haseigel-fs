@@ -18,13 +18,13 @@ Below you'll find a comprehensive README describing how the haseUNDigel project 
 ## Project Overview
 
 haseUNDigel is designed to:
-1. Receive HTML data (via API requests or by loading directly from a database).
+1. Receive HTML data via provided endpoints. 
 2. Parse the HTML to identify and extract image URLs.
 3. Download images from these URLs into a local temporary folder.
 4. Classify the downloaded images using multiple integrated computer vision models:
-   - MobileViT (MobileViTV2ForImageClassification)
+   - MobileViT (MobileViTV2ForImageClassification) # you can use it for tests of the enpoints.
    - Moondream (a Vision-Language model supporting multiple queries)
-   - Async Vision-Language classifiers (using litellm for certain hosted models)
+   - Async Vision-Language classifiers (using litellm to access any hosted models)
 
 The project is built on Flask for its API and uses Pydantic, NLTK, and Transformers for data validation, text parsing, and model inference. It also supports a PostgreSQL database integration for loading HTML data in bulk, though you can skip the database part and just send HTML directly.
 
@@ -34,14 +34,12 @@ The project is built on Flask for its API and uses Pydantic, NLTK, and Transform
   - Extract <img> tags and relevant attributes (like src, alt, etc.).
 - **Image Downloading**
   - Resolve relative paths, handle SSL vs. non-SSL, check file sizes, and store images in a local temp directory.
-- **Image Classification**
+- **Image Classification** # we left 3 main classifiers iside 
   - MobileViTClassifier: Lightweight image classifier for quick predictions.
-  - MoondreamProcessor: Asynchronous image encoding & question answering (multiple categories).
-  - VisionLanguageModelClassifier: Example of hooking up a hosted LLM service for images.
+  - MoondreamProcessor: Asynchronous image encoding & question answering (multiple categories) & description with custom categories
+  - VisionLanguageModelClassifier: LiteLLM interface that can access most of the hosted LLMs.
 - **Batch Processing**
   - Concurrency and async flows to handle many images and domains at once.
-- **REST API Endpoints**
-  - For classification, domain-level HTML processing, single HTML processing, and health checks.
 
 ## Folder Structure
 
@@ -53,6 +51,9 @@ haseigel-fs/
 │   ├── __init__.py              # Initializes the Flask app & registers routes
 │   ├── api/
 │   │   └── routes.py            # Defines the Flask API endpoints
+│   ├── data/
+│   └── images/
+│   │   └── temp/                # Downloaded images go here
 │   ├── config/
 │   │   ├── config.py            # Basic config (directory paths, etc.)
 │   │   ├── models.py            # Dictionary mapping model names to model classes
@@ -77,11 +78,10 @@ haseigel-fs/
 │   │   ├── data_tool.py
 │   │   └── __init__.py
 │   └── __pycache__/
-├── data/
-│   └── images/
-│       └── temp/                # Downloaded images go here
 ├── docs/
-│   └── moondream_performance.md # Performance tests documentation
+│   ├── moondream_performance.md                    # Performance tests documentation
+│   ├── hosted_model_implementation.md              # Infos on the implementation of litellm
+│   └── moondream_implementation.md                 # Moondream implemenation 
 ├── playground/                  # Various scripts and experiments
 ├── run.py                      # Entry point to run Flask
 ├── Dockerfile                  # Docker build instructions
@@ -133,6 +133,11 @@ pip install -r requirements.txt
 5. **Download NLTK Dependencies**
 ```bash
 python setup_nltk.py
+```
+
+6. **Run the Service**
+```bash
+python run.py
 ```
 
 ## Docker Setup & Usage
@@ -202,35 +207,11 @@ https://docs.litellm.ai/docs/providers - you can find all the providers that are
 Example `.env`:
 ```env
 OPENAI_API_KEY="your_openai_api_key_here"
-DB_HOST="localhost"
+DB_HOST="localhost" # if you want to read and write data to the db
 DB_NAME="mydatabase"
 DB_USER="postgres"
 DB_PASS="mysecretpassword"
 DB_PORT=5432
-```
-
-## How to Run
-
-### 1. Locally (Python / Flask)
-
-After installing dependencies and setting environment variables:
-
-Or simply:
-```bash
-python run.py
-```
-
-### 2. Via Docker / Docker Compose
-
-```bash
-# Build the image
-docker build -t haseundigel-app .
-
-# Run the container witout gpu support
-docker run --rm -p 5000:5000 haseundigel-app
-
-# Run the container with gpu support
-docker run --gpus all --rm -p 5000:5000 haseundigel-app
 ```
 
 ## Usage & API Endpoints
