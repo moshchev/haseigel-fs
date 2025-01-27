@@ -9,11 +9,10 @@ Below you'll find a comprehensive README describing how the haseUNDigel project 
 4. Installation & Setup (Non-Docker)
 5. Docker Setup & Usage
 6. Environment Variables
-7. How to Run
-8. Usage & API Endpoints
-9. Additional Directories
-10. Workflow Summary
-11. Additional Notes
+7. Usage & API Endpoints
+8. Additional Directories
+9. Workflow Summary
+10. Additional Notes
 
 ## Project Overview
 
@@ -26,15 +25,15 @@ haseUNDigel is designed to:
    - Moondream (a Vision-Language model supporting multiple queries)
    - Async Vision-Language classifiers (using litellm to access any hosted models)
 
-The project is built on Flask for its API and uses Pydantic, NLTK, and Transformers for data validation, text parsing, and model inference. It also supports a PostgreSQL database integration for loading HTML data in bulk, though you can skip the database part and just send HTML directly.
+The project is built on Flask for its API and uses Pydantic, NLTK, and Transformers for data validation, text parsing, and model inference.
 
 ## Main Features
 
 - **HTML Processing**
-  - Extract <img> tags and relevant attributes (like src, alt, etc.).
+  - Extract image tags and relevant attributes (like src, alt, etc.).
 - **Image Downloading**
   - Resolve relative paths, handle SSL vs. non-SSL, check file sizes, and store images in a local temp directory.
-- **Image Classification** # we left 3 main classifiers iside 
+- **Image Classification** # we left 3 main classifiers inside 
   - MobileViTClassifier: Lightweight image classifier for quick predictions.
   - MoondreamProcessor: Asynchronous image encoding & question answering (multiple categories) & description with custom categories
   - VisionLanguageModelClassifier: LiteLLM interface that can access most of the hosted LLMs.
@@ -94,7 +93,7 @@ haseigel-fs/
 ### Important Files & Directories
 
 - `app/`: Main application logic (API routes, configs, model code, services, data folder).
-- `data/`: Stores test images (under images/temp).
+- `app/data/`: Stores test images (under images/temp).
 - `docs/`: Documentation or notes (for example, performance notes on Moondream).
 - `playground/`: A "lab" folder for personal tests, sample scripts, or experimental code.
 - `Dockerfile` & `docker-compose.yml`: Docker setup to containerize the application.
@@ -158,10 +157,10 @@ If you want a Docker-based setup, we provide both a Dockerfile and a docker-comp
 docker build -t haseundigel-app .
 
 # Run the container witout gpu support
-docker run --rm -p 5000:5000 haseundigel-app
+docker run --rm -p 5000:5000 --name image-html-parser haseundigel-app
 
 # Run the container with gpu support
-docker run --gpus all --rm -p 5000:5000 haseundigel-app
+docker run --gpus all --rm -p 5000:5000 --name image-html-parser haseundigel-app
 ```
 
 This will:
@@ -184,7 +183,7 @@ docker-compose up --build
 
 ### Confirm:
 
-Once the container is running, open http://localhost:5000/health. You should get:
+Once the container is running, send the get request to http://localhost:5000/health. You should get:
 
 ```json
 
@@ -203,16 +202,6 @@ Common environment variables include:
 - Additional keys or tokens for Fireworks AI models, etc.
 
 https://docs.litellm.ai/docs/providers - you can find all the providers that are currently supported by litellm, so you can configure your .env file to use the provider you want.
-
-Example `.env`:
-```env
-OPENAI_API_KEY="your_openai_api_key_here"
-DB_HOST="localhost" # if you want to read and write data to the db
-DB_NAME="mydatabase"
-DB_USER="postgres"
-DB_PASS="mysecretpassword"
-DB_PORT=5432
-```
 
 ## Usage & API Endpoints
 
