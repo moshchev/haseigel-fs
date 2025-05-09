@@ -1,6 +1,4 @@
-# haseUNDigel Project
-
-Below you'll find a comprehensive README describing how the haseUNDigel project is structured, what it does, and how to run it—both using a standard Python environment and via Docker. This README assumes you've cloned or downloaded this repository, which contains all the code, configuration, and example files needed.
+# Hase&Igel Project
 
 ## Table of Contents
 1. Project Overview
